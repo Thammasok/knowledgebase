@@ -1,0 +1,19 @@
+meta {
+  name: Create an Account
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{SERVICE_URL}}/api/v1/auth/signup
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "displayName": "Charanchai Thongkum",
+      "email": "jaranchai.nt@hotmail.com",
+      "password": "w5x%LEEHm#07#YJd"
+  }
+}

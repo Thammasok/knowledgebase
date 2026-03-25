@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "main"]
+}
+
+/**
+ * --------------------------------------------------------------------
+ */
+/**
+ * Accounts
+ */
+/**
+ * --------------------------------------------------------------------
+ */
+
+model Accounts {
+  id                String   @id @unique @default(ulid())
+  displayName       String   @db.VarChar(255)
+  firstName         String?  @db.VarChar(255)
+  lastName          String?  @db.VarChar(255)
+  email             String   @unique @db.VarChar(255)
+  password          String   @db.Text
+  image             String?  @db.Text
+  isExternalAccount Boolean? @default(false)
+  externalProvider  String?  @db.VarChar(255)
+  source            String?  @db.VarChar(255)
+  isVerify          Boolean  @default(false)
+  isRemove          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relation
+  accountForgotPassword AccountForgotPassword?
+  authSessions          AuthSession[]
+  accountSetting        AccountSetting?
+  teams                 Team[]
+
+  // Mapping
+  @@map("accounts")
+  @@schema("main")
+}
+
+model AccountRequestAccess {
+  id        String   @id @unique @default(ulid())
+  email     String   @unique @db.VarChar(255)
+  allowed   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Mapping
+  @@map("account_request_access")
+  @@schema("main")
+}
+
+model AccountForgotPassword {
+  accountId String   @unique @db.VarChar(128)
+  token     String   @db.VarChar(128)
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation
+  account Accounts @relation(fields: [accountId], references: [id])
+
+  // Mapping
+  @@map("account_forgot_passwords")
+  @@schema("main")
+}
+
+model AuthSession {
+  id        String   @id @default(uuid())
+  accountId String   @db.VarChar(128)
+  deviceId  String?  @db.VarChar(128)
+  ip        String?  @db.VarChar(128)
+  userAgent String?  @db.Text
+  ipInfo    String?  @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation
+  account Accounts @relation(fields: [accountId], references: [id])
+
+  // Mapping
+  @@map("auth_sessions")
+  @@schema("main")
+}
+
+model AccountSetting {
+  accountId String   @unique @db.VarChar(128)
+  language  String   @default("en")
+  theme     Theme    @default(system)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation
+  account Accounts @relation(fields: [accountId], references: [id])
+
+  // Mapping
+  @@map("account_settings")
+  @@schema("main")
+}
+
+/**
+ * --------------------------------------------------------------------
+ */
+/**
+ * Teams
+ */
+/**
+ * --------------------------------------------------------------------
+ */
+
+model Team {
+  id        String   @id @unique @default(ulid())
+  accountId String   @db.VarChar(128)
+  name      String   @db.VarChar(255)
+  logo      String?  @db.VarChar(128)
+  color     String   @default("#18181b") @db.VarChar(32)
+  isRemove  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation
+  account Accounts @relation(fields: [accountId], references: [id])
+
+  // Mapping
+  @@map("teams")
+  @@schema("main")
+}
+
+enum Theme {
+  light
+  dark
+  system
+
+  // Mapping
+  @@schema("main")
+}

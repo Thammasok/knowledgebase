@@ -1,0 +1,11 @@
+meta {
+  name: Get Setting
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{SERVICE_URL}}/api/v1/account/setting/basic
+  body: json
+  auth: inherit
+}

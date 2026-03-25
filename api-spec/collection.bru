@@ -1,0 +1,18 @@
+headers {
+  Content-Type: application/json
+  x-device-id: {{DEVICE_ID}}
+  Content-Language: {{LANG}}
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{USER_AUTH_ACCESS_TOKEN}}
+}
+
+vars:pre-request {
+  USER_AUTH_ACCESS_TOKEN: 
+  USER_AUTH_REFRESH_TOKEN: 
+}

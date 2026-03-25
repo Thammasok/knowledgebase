@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:18
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: kb-db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./dockers/postgresql/data:/var/lib/postgresql/18/data
+    networks:
+      - workspace
   qdrant:
     image: qdrant/qdrant:latest
     container_name: kb_qdrant
@@ -15,7 +29,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    ports:
+      - 6379:6379
+    networks:
+      - workspace
   mongo:
     image: mongo:latest
     container_name: kb_mongo

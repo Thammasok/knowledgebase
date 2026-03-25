@@ -1,0 +1,6 @@
+{
+  "sonarlint.connectedMode.project": {
+    "connectionId": "linux-localhost",
+    "projectKey": "san-ai-all-service"
+  }
+}

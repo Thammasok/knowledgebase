@@ -1,0 +1,19 @@
+meta {
+  name: Verify Email
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{SERVICE_URL}}/api/v1/auth/verify/mail
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "email": "jaranchai.nt@hotmail.com",
+      "ref": "MezMep",
+      "otp": "386785"
+  }
+}

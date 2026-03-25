@@ -1,0 +1,19 @@
+meta {
+  name: Create an Account by Request
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{SERVICE_URL}}/api/v1/auth/signup/request-access
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "requestId": "01KF6H2B0WGYJ60F7QZ2GCG0XA",
+      "displayName": "Charanchai Thongkum",
+      "password": "w5x%LEEHm#07#YJd"
+  }
+}

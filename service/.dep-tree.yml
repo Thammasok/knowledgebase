@@ -1,0 +1,12 @@
+# exclude:
+#   - 'src/test/*.ts'
+
+unwrapExports: false
+
+check:
+  # These are the entrypoints to your application. Dependencies will be checked with
+  # these files as root nodes. Typically, an application has only one entrypoint, which
+  # is the executable file (`src/index.ts`, `main.py`, `src/lib.rs`, ...), but here
+  # you can declare as many as you want.
+  entrypoints:
+    - src/server.ts

@@ -1,0 +1,11 @@
+meta {
+  name: Deactivate Session
+  type: http
+  seq: 2
+}
+
+delete {
+  url: {{SERVICE_URL}}/api/v1/auth-session/deactivate/8a1e98e197d74cf2aa48cdc30f79f90d
+  body: none
+  auth: inherit
+}
