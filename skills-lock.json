@@ -1,10 +1,50 @@
 {
   "version": 1,
   "skills": {
+    "postgresql": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "454129ab88756362b730a92731aeaa318dc773042333c0ee14b9ee2f8e3ff026"
+    },
+    "postgresql-optimization": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "5b39697ca7f4204bdbbd4f34554e628add59dba133eab16d609b2e5a1af4cd2c"
+    },
+    "react-component-performance": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "621fc5b021157ca1eb041bb15429a1536fcfd3b39c11a724d3a1ce7576d74149"
+    },
+    "react-flow-architect": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "3349196ae4ca70de8402e1146c313d30874a6543a4d8c56752ca5be49d6c3bd8"
+    },
+    "react-flow-node-ts": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "8de74a25ea651a020be90de129a6614a1b8cf14a0d1381663513726df70a6bff"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
       "computedHash": "77faba608ea949351d1757e29e6cb726f6ec5937f7595be0593038a7d2d76bb9"
+    },
+    "typescript-advanced-types": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "e583254880e9cb3ebece3dcff60a8964234d33504c54aa3d38b5525c7f0e2e29"
+    },
+    "typescript-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "6a90334060f03a9885eaafe683f14f3b0015c83085e10a511626bc4f4388aa47"
+    },
+    "zustand-store-ts": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "8dd3e56bb9271c9a2c582e8bccda732905b53ae04f7cd6b1d1958770f767cb2c"
     }
   }
 }

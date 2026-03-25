@@ -39,7 +39,7 @@ Design is problem-solving. Before proposing any visual solution, understand:
 Always check the project's design system config before generating any code or specs:
 
 ```
-.opencode/skills/ux-ui-designer/design-system/design-system.config.json
+.claude/knowledge/design-system/design-system.config.json
 ```
 
 Key fields to read:
@@ -54,12 +54,12 @@ Key fields to read:
 
 | Need | File |
 |---|---|
-| Colors (palette, semantic, component, dark mode) | `tokens/colors.json` |
-| Typography (font families, scale, text styles) | `tokens/typography.json` |
-| Spacing (4px grid, semantic aliases, density) | `tokens/spacing.json` |
-| Shadows (elevation levels, focus rings, colored) | `tokens/shadows.json` |
-| Borders (radius scale, presets, width) | `tokens/borders.json` |
-| Breakpoints (responsive, grid, z-index) | `tokens/breakpoints.json` |
+| Colors (palette, semantic, component, dark mode) | `.claude/knowledge/design-system/tokens/colors.json` |
+| Typography (font families, scale, text styles) | `.claude/knowledge/design-system/tokens/typography.json` |
+| Spacing (4px grid, semantic aliases, density) | `.claude/knowledge/design-system/tokens/spacing.json` |
+| Shadows (elevation levels, focus rings, colored) | `.claude/knowledge/design-system/tokens/shadows.json` |
+| Borders (radius scale, presets, width) | `.claude/knowledge/design-system/tokens/borders.json` |
+| Breakpoints (responsive, grid, z-index) | `.claude/knowledge/design-system/tokens/breakpoints.json` |
 
 **Token usage tiers:**
 ```
@@ -81,10 +81,10 @@ Templates  → Dashboard, Auth, Settings, List/Detail
 ```
 
 Reference files:
-- `components/atoms.md`
-- `components/molecules.md`
-- `components/organisms.md`
-- `components/templates.md`
+- `.claude/knowledge/design-system/components/atoms.md`
+- `.claude/knowledge/design-system/components/molecules.md`
+- `.claude/knowledge/design-system/components/organisms.md`
+- `.claude/knowledge/design-system/components/templates.md`
 
 ### Component Design Checklist (every component)
 - [ ] All variants defined (solid, outline, ghost, destructive...)
@@ -111,8 +111,8 @@ Critical checks (P0 — never skip):
 - Modal/dialog traps focus + Escape closes
 
 Reference:
-- `accessibility/wcag-checklist.md` → full WCAG 2.2 checklist
-- `accessibility/aria-patterns.md` → ARIA for 15+ component types
+- `.claude/knowledge/design-system/accessibility/wcag-checklist.md` → full WCAG 2.2 checklist
+- `.claude/knowledge/design-system/accessibility/aria-patterns.md` → ARIA for 15+ component types
 
 ---
 
@@ -122,9 +122,9 @@ Determine framework from `design-system.config.json > framework.name`:
 
 | Config value | Reference file |
 |---|---|
-| `react-tailwind` | `frameworks/react-tailwind.md` |
-| `nextjs` | `frameworks/nextjs.md` |
-| `swiftui` | `frameworks/swiftui.md` |
+| `react-tailwind` | `.claude/knowledge/design-system/frameworks/react-tailwind.md` |
+| `nextjs` | `.claude/knowledge/design-system/frameworks/nextjs.md` |
+| `swiftui` | `.claude/knowledge/design-system/frameworks/swiftui.md` |
 
 ### React + Tailwind Pattern Summary
 - Use `cva` (class-variance-authority) for component variants
@@ -146,10 +146,10 @@ Determine framework from `design-system.config.json > framework.name`:
 
 When reviewing a design or implementation:
 
-1. **Heuristic scan** — Nielsen's 10 heuristics (see `workflows/design-review.md`)
+1. **Heuristic scan** — Nielsen's 10 heuristics (see `.claude/knowledge/design-system/workflows/design-review.md`)
 2. **Consistency check** — do all components use design tokens consistently?
 3. **State coverage** — are loading, error, empty states all handled?
-4. **Accessibility audit** — run through P0 items in `accessibility/wcag-checklist.md`
+4. **Accessibility audit** — run through P0 items in `.claude/knowledge/design-system/accessibility/wcag-checklist.md`
 5. **Responsive check** — does layout work at 320px, 768px, 1280px?
 
 Severity scale: **P0** = must fix | **P1** = should fix | **P2** = nice to have

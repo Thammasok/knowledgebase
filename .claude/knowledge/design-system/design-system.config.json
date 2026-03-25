@@ -1,0 +1,95 @@
+{
+  "$comment": "Design system configuration for shadcn/ui. Edit this file to set your project theme and active tokens. The LLM reads this to generate consistent, on-brand code.",
+
+  "componentLibrary": {
+    "name": "shadcn/ui",
+    "version": "latest",
+    "source": "https://ui.shadcn.com",
+    "registry": "default",
+    "$comment": "Components installed via: pnpm shadcn add <component>"
+  },
+
+  "theme": {
+    "name": "my-app",
+    "mode": "light",
+    "primaryColor": "blue",
+    "accentColor": "purple",
+    "neutralColor": "slate",
+    "errorColor": "red",
+    "warningColor": "yellow",
+    "successColor": "green",
+    "infoColor": "blue",
+
+    "radius": "md",
+    "density": "comfortable",
+
+    "fontFamilySans": "Inter",
+    "fontFamilySerif": "Georgia",
+    "fontFamilyMono": "JetBrains Mono",
+    "typeScale": "majorThird"
+  },
+
+  "tokenOverrides": {
+    "$comment": "Override any token value here. Keys are dot-notation paths into tokens/*.json (e.g. 'semantic.primary.DEFAULT').",
+    "examples": {
+      "semantic.primary.DEFAULT": "#2563eb",
+      "semantic.radius.button": "9999px",
+      "semantic.spacing.componentPaddingMd": "12px"
+    }
+  },
+
+  "components": {
+    "button": {
+      "defaultVariant": "default",
+      "defaultSize": "default",
+      "rounded": false,
+      "fullWidthOnMobile": true,
+      "$comment": "shadcn variants: default, secondary, outline, ghost, link, destructive"
+    },
+    "input": {
+      "defaultVariant": "outline",
+      "defaultSize": "md",
+      "floatingLabel": false
+    },
+    "card": {
+      "defaultShadow": "sm",
+      "defaultRadius": "md",
+      "defaultPadding": "lg"
+    },
+    "modal": {
+      "closeOnBackdrop": true,
+      "defaultSize": "md"
+    },
+    "toast": {
+      "position": "bottom-right",
+      "duration": 4000
+    }
+  },
+
+  "framework": {
+    "name": "nextjs",
+    "nextVersion": "16",
+    "tailwindVersion": "4",
+    "reactVersion": "19",
+    "typescript": true,
+    "cssVariables": true,
+    "componentVariants": "cva",
+    "iconLibrary": "lucide-react",
+    "animationLibrary": "motion",
+    "$comment": "Uses shadcn/ui with CVA for component variants, Tailwind v4 CSS variables"
+  },
+
+  "accessibility": {
+    "wcagLevel": "AA",
+    "focusRing": true,
+    "reduceMotion": true,
+    "forcedColors": false,
+    "minimumContrastRatio": 4.5
+  },
+
+  "darkMode": {
+    "enabled": true,
+    "strategy": "class",
+    "defaultMode": "system"
+  }
+}
