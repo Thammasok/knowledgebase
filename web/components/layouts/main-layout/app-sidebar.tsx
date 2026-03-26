@@ -13,7 +13,7 @@ import { NavMain } from '@/components/layouts/nav-main'
 import { NavUser } from '@/components/layouts/nav-user'
 import { MAIN_MENUS } from '@/constants/menu.constant'
 import { toggleConfig } from '@/configs/toggle.config'
-import { TeamSwitcher } from '../team/team-switcher'
+import { WorkspaceSwitcher } from '../workspace/workspace-switcher'
 
 // const projects = [
 //   {
@@ -39,7 +39,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        {toggleConfig.team ? <TeamSwitcher /> : <Logo />}
+        {toggleConfig.workspace ? <WorkspaceSwitcher /> : <Logo />}
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={MAIN_MENUS} iconMode={state === 'collapsed'} />

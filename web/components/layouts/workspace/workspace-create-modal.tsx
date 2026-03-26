@@ -11,42 +11,42 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { useTeamCreateHook } from './use-team-create.hook'
+import { useWorkspaceCreateHook } from './use-workspace-create.hook'
 import { Form } from '@/components/ui/form'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { TeamCreateForm } from './team-create-form'
+import { WorkspaceCreateForm } from './workspace-create-form'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface TeamCreateModalProps {
+interface WorkspaceCreateModalProps {
   open: boolean
   onClose: () => void
 }
 
-const TeamCreateModal = ({ open, onClose }: TeamCreateModalProps) => {
-  const { teamForm, loading, error, onSubmit } = useTeamCreateHook({ onClose })
+const WorkspaceCreateModal = ({ open, onClose }: WorkspaceCreateModalProps) => {
+  const { workspaceForm, loading, error, onSubmit } = useWorkspaceCreateHook({ onClose })
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) teamForm.reset()
+    if (!open) workspaceForm.reset()
     onClose()
   }
 
   return (
-    <Form {...teamForm}>
+    <Form {...workspaceForm}>
       <form
-        onSubmit={teamForm.handleSubmit(onSubmit)}
+        onSubmit={workspaceForm.handleSubmit(onSubmit)}
         className="flex flex-col gap-4"
       >
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Create new team</DialogTitle>
+              <DialogTitle>Create new workspace</DialogTitle>
               <DialogDescription>
-                Choose an icon, color, and give your team a name.
+                Choose an icon, color, and give your workspace a name.
               </DialogDescription>
             </DialogHeader>
 
-            <TeamCreateForm form={teamForm} />
+            <WorkspaceCreateForm form={workspaceForm} />
 
             {error && (
               <Alert variant="destructive">
@@ -66,11 +66,11 @@ const TeamCreateModal = ({ open, onClose }: TeamCreateModalProps) => {
               </Button>
               <Button
                 type="submit"
-                onClick={teamForm.handleSubmit(onSubmit)}
-                disabled={!teamForm.watch('name').trim() || loading}
+                onClick={workspaceForm.handleSubmit(onSubmit)}
+                disabled={!workspaceForm.watch('name').trim() || loading}
               >
                 {loading && <Spinner />}
-                Create team
+                Create workspace
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -80,4 +80,4 @@ const TeamCreateModal = ({ open, onClose }: TeamCreateModalProps) => {
   )
 }
 
-export default TeamCreateModal
+export default WorkspaceCreateModal

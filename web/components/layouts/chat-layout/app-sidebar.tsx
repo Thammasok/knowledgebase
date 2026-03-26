@@ -9,7 +9,7 @@ import {
 import { NavMain } from '../nav-main'
 import { NavUser } from '../nav-user'
 import ChatContent from './chat-content'
-import { TeamSwitcher } from '../team/team-switcher'
+import { WorkspaceSwitcher } from '../workspace/workspace-switcher'
 import { MAIN_MENUS } from '@/constants/menu.constant'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -25,7 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         className="hidden md:flex w-[calc(var(--sidebar-width-icon)+1px)]! border-r"
       >
         <SidebarHeader>
-          <TeamSwitcher isSecound />
+          <WorkspaceSwitcher isSecound />
         </SidebarHeader>
         <SidebarContent>
           <NavMain items={MAIN_MENUS} iconMode />
@@ -38,7 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {/* Mobile nav menu - shown in mobile Sheet, hidden on desktop */}
       <div className="flex flex-col md:hidden">
         <SidebarHeader>
-          <TeamSwitcher />
+          <WorkspaceSwitcher />
         </SidebarHeader>
         <div className="flex-1 overflow-y-auto">
           <NavMain items={MAIN_MENUS} />

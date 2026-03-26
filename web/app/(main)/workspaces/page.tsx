@@ -36,28 +36,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { type Team } from '@/stores/team-list.store'
+import { type Workspace } from '@/stores/workspace-list.store'
 import {
-  useTeamTableHook,
+  useWorkspaceTableHook,
   PAGE_SIZE_OPTIONS,
   type PageSizeOption,
-} from '@/components/layouts/team/use-team-table.hook'
-import TeamCreateModal from '@/components/layouts/team/team-create-modal'
-import { TeamEditModal } from '@/components/layouts/team/team-edit-modal'
+} from '@/components/layouts/workspace/use-workspace-table.hook'
+import WorkspaceCreateModal from '@/components/layouts/workspace/workspace-create-modal'
+import { WorkspaceEditModal } from '@/components/layouts/workspace/workspace-edit-modal'
 
-// ─── Team avatar ───────────────────────────────────────────────────────────────
+// ─── Workspace avatar ───────────────────────────────────────────────────────────────
 
-function TeamAvatar({ team }: { team: Team }) {
+function WorkspaceAvatar({ workspace }: { workspace: Workspace }) {
   return (
     <div
       className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white"
-      style={{ backgroundColor: team.color }}
+      style={{ backgroundColor: workspace.color }}
     >
-      {team.logo ? (
-        <DynamicIcon name={team.logo} className="size-4" />
+      {workspace.logo ? (
+        <DynamicIcon name={workspace.logo} className="size-4" />
       ) : (
         <span className="text-xs font-semibold leading-none">
-          {team.name.charAt(0).toUpperCase()}
+          {workspace.name.charAt(0).toUpperCase()}
         </span>
       )}
     </div>
@@ -86,17 +86,17 @@ function buildPageNumbers(current: number, total: number): (number | '...')[] {
 // ─── Columns ──────────────────────────────────────────────────────────────────
 
 interface BuildColumnsProps {
-  onEdit: (team: Team) => void
+  onEdit: (workspace: Workspace) => void
 }
 
-function buildColumns({ onEdit }: BuildColumnsProps): ColumnDef<Team>[] {
+function buildColumns({ onEdit }: BuildColumnsProps): ColumnDef<Workspace>[] {
   return [
     {
       accessorKey: 'name',
       header: 'Name',
       cell: ({ row, getValue }) => (
         <div className="flex items-center justify-start gap-2">
-          <TeamAvatar team={row.original} />
+          <WorkspaceAvatar workspace={row.original} />
           <span className="font-medium">{getValue<string>()}</span>
         </div>
       ),
@@ -123,9 +123,9 @@ function buildColumns({ onEdit }: BuildColumnsProps): ColumnDef<Team>[] {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TeamPage = () => {
+const WorkspacePage = () => {
   const {
-    teams,
+    workspaces,
     total,
     page,
     totalPages,
@@ -136,17 +136,17 @@ const TeamPage = () => {
     setPageSize,
     goToPage,
     refresh,
-  } = useTeamTableHook()
+  } = useWorkspaceTableHook()
 
   const [createOpen, setCreateOpen] = useState(false)
-  const [editTeam, setEditTeam] = useState<Team | null>(null)
+  const [editWorkspace, setEditWorkspace] = useState<Workspace | null>(null)
 
   const columns = buildColumns({
-    onEdit: setEditTeam,
+    onEdit: setEditWorkspace,
   })
 
   const table = useReactTable({
-    data: teams,
+    data: workspaces,
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -160,15 +160,15 @@ const TeamPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Teams</h1>
-          <p className="text-sm text-muted-foreground">Manage your teams</p>
+          <h1 className="text-2xl font-semibold">Workspaces</h1>
+          <p className="text-sm text-muted-foreground">Manage your workspaces</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Search */}
           <div className="relative max-w-xs">
             <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search teams..."
+              placeholder="Search workspaces..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -176,7 +176,7 @@ const TeamPage = () => {
           </div>
           <Button onClick={() => setCreateOpen(true)}>
             <PlusIcon className="size-4" />
-            New team
+            New workspace
           </Button>
         </div>
       </div>
@@ -231,7 +231,7 @@ const TeamPage = () => {
                   colSpan={columns.length}
                   className="h-32 text-center text-muted-foreground"
                 >
-                  {search ? `No teams matching "${search}".` : 'No teams yet.'}
+                  {search ? `No workspaces matching "${search}".` : 'No workspaces yet.'}
                 </TableCell>
               </TableRow>
             )}
@@ -244,7 +244,7 @@ const TeamPage = () => {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <p className="text-sm text-muted-foreground">
-              {from}–{to} of {total} team{total !== 1 ? 's' : ''}
+              {from}–{to} of {total} workspace{total !== 1 ? 's' : ''}
             </p>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Rows</span>
@@ -324,17 +324,17 @@ const TeamPage = () => {
       )}
 
       {/* Dialogs */}
-      <TeamCreateModal
+      <WorkspaceCreateModal
         open={createOpen}
         onClose={() => {
           setCreateOpen(false)
           refresh()
         }}
       />
-      <TeamEditModal
-        team={editTeam}
+      <WorkspaceEditModal
+        workspace={editWorkspace}
         onClose={() => {
-          setEditTeam(null)
+          setEditWorkspace(null)
           refresh()
         }}
       />
@@ -342,4 +342,4 @@ const TeamPage = () => {
   )
 }
 
-export default TeamPage
+export default WorkspacePage

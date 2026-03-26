@@ -1,7 +1,7 @@
 export const toggleConfig = {
   // Feature Auth with Socials
-  signupWithSocials: false, 
+  signupWithSocials: false,
   loginWithSocials: false,
-  // Feature Team/Workspace
-  team: true
+  // Feature Workspace
+  workspace: true
 }

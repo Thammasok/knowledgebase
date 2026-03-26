@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import callWithAuth from '@/services/auth.service'
 import { authApiPath } from '@/configs/service.config'
 import customServiceError from '@/utils/custom-service-error'
-import { type Team } from '@/stores/team-list.store'
+import { type Workspace } from '@/stores/workspace-list.store'
 
 export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const
 export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
-export const useTeamTableHook = () => {
-  const [teams, setTeams] = useState<Team[]>([])
+export const useWorkspaceTableHook = () => {
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSizeState] = useState<PageSizeOption>(10)
@@ -23,13 +23,13 @@ export const useTeamTableHook = () => {
       setLoading(true)
       setError('')
 
-      const result = await callWithAuth.get<{ data: Team[]; total: number }>(
-        authApiPath.team.getTeams,
+      const result = await callWithAuth.get<{ data: Workspace[]; total: number }>(
+        authApiPath.workspace.getWorkspaces,
         { params: { page: p, limit, ...(s ? { search: s } : {}) } },
       )
 
       if (result.status === 200) {
-        setTeams(result.data.data)
+        setWorkspaces(result.data.data)
         setTotal(result.data.total)
       }
     } catch (err) {
@@ -37,7 +37,7 @@ export const useTeamTableHook = () => {
       setError(
         Array.isArray(e?.message)
           ? e.message.join(', ')
-          : (e?.message ?? 'Failed to load teams'),
+          : (e?.message ?? 'Failed to load workspaces'),
       )
     } finally {
       setLoading(false)
@@ -85,7 +85,7 @@ export const useTeamTableHook = () => {
   }, [fetch])
 
   return {
-    teams,
+    workspaces,
     total,
     page,
     totalPages,

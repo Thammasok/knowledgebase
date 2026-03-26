@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { COLOR_OPTIONS } from '@/constants/color-option.constant'
 import { ICON_OPTIONS } from '@/constants/icon-option.constant'
-import { TeamForm } from './use-team-create.hook'
+import { WorkspaceForm } from './use-workspace-create.hook'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -22,12 +22,12 @@ const DEFAULT_COLOR = COLOR_OPTIONS[0].value
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface TeamCreateFormProps {
-  form: UseFormReturn<TeamForm>
+interface WorkspaceCreateFormProps {
+  form: UseFormReturn<WorkspaceForm>
 }
 
-export const TeamCreateForm = ({ form }: TeamCreateFormProps) => {
-  const teamName = form.watch('name') ?? ''
+export const WorkspaceCreateForm = ({ form }: WorkspaceCreateFormProps) => {
+  const workspaceName = form.watch('name') ?? ''
   const selectedIcon = (form.watch('logo') ?? '') as IconName | ''
   const selectedColor = form.watch('color') ?? DEFAULT_COLOR
 
@@ -49,12 +49,12 @@ export const TeamCreateForm = ({ form }: TeamCreateFormProps) => {
                       <DynamicIcon name={selectedIcon} className="size-5" />
                     ) : (
                       <span className="text-sm font-semibold leading-none">
-                        {teamName.charAt(0).toUpperCase() || 'T'}
+                        {workspaceName.charAt(0).toUpperCase() || 'W'}
                       </span>
                     )}
                   </div>
 
-                  <Input id="name" placeholder="Team name" {...field} />
+                  <Input id="name" placeholder="Workspace name" {...field} />
                 </div>
               </FormControl>
               <FormMessage />

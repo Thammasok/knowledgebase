@@ -37,10 +37,10 @@ export const authApiPath = {
     getBasicSetting: '/api/v1/account/setting/basic',
     updateBasicSetting: '/api/v1/account/setting/basic',
   },
-  team: {
-    getTeams: '/api/v1/team',
-    createTeam: '/api/v1/team',
-    updateTeam: '/api/v1/team',
+  workspace: {
+    getWorkspaces: '/api/v1/workspace',
+    createWorkspace: '/api/v1/workspace',
+    updateWorkspace: '/api/v1/workspace',
   },
   customer: {
     createCustomer: '/api/v1/customer',

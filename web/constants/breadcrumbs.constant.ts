@@ -10,12 +10,12 @@ export const BREADCRUMBS: { url: string; list: BreadcrumbEntry[] }[] = [
     list: [{ name: 'Chats' }],
   },
   {
-    url: '/teams',
-    list: [{ name: 'Teams' }],
+    url: '/workspaces',
+    list: [{ name: 'Workspaces' }],
   },
   {
-    url: '/team/create',
-    list: [{ name: 'Teams', url: '/team' }, { name: 'Create team' }],
+    url: '/workspace/create',
+    list: [{ name: 'Workspaces', url: '/workspaces' }, { name: 'Create workspace' }],
   },
   {
     url: '/settings/profile',

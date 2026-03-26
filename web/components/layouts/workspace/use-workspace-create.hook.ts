@@ -5,21 +5,21 @@ import { type IconName } from 'lucide-react/dynamic'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { authApiPath } from '@/configs/service.config'
 import callWithAuth from '@/services/auth.service'
-import useTeamListsStore, { type Team } from '@/stores/team-list.store'
+import useWorkspaceListsStore, { type Workspace } from '@/stores/workspace-list.store'
 import customServiceError from '@/utils/custom-service-error'
 
-interface UseTeamCreateHookProps {
+interface UseWorkspaceCreateHookProps {
   onClose: () => void
 }
 
-export interface ICreateTeamPayload {
+export interface ICreateWorkspacePayload {
   name: string
   logo?: IconName | ''
   color?: string
 }
 
 
-const teamSchema = z.object({
+const workspaceSchema = z.object({
     name: z
       .string()
       .min(3, {
@@ -32,17 +32,17 @@ const teamSchema = z.object({
     color: z.string().optional(),
 })
 
-export type TeamForm = z.infer<typeof teamSchema>
+export type WorkspaceForm = z.infer<typeof workspaceSchema>
 
 
-export const useTeamCreateHook = ({ onClose }: UseTeamCreateHookProps) => {
-  const { addTeam } = useTeamListsStore()
+export const useWorkspaceCreateHook = ({ onClose }: UseWorkspaceCreateHookProps) => {
+  const { addWorkspace } = useWorkspaceListsStore()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-    const teamForm = useForm<TeamForm>({
-      resolver: zodResolver(teamSchema),
+    const workspaceForm = useForm<WorkspaceForm>({
+      resolver: zodResolver(workspaceSchema),
       defaultValues: {
         name: '',
         logo: '',
@@ -50,30 +50,30 @@ export const useTeamCreateHook = ({ onClose }: UseTeamCreateHookProps) => {
       },
     })
 
-  const onSubmit = async (payload: TeamForm) => {
+  const onSubmit = async (payload: WorkspaceForm) => {
     try {
       setLoading(true)
       setError('')
 
-     const result = await callWithAuth.post<Team>(
-          authApiPath.team.createTeam,
+     const result = await callWithAuth.post<Workspace>(
+          authApiPath.workspace.createWorkspace,
           payload,
         )
 
       if (result.status === 201) {
-        addTeam(result.data)
+        addWorkspace(result.data)
 
         setError('')
         onClose()
       }
     } catch (error) {
       const e = customServiceError(error)
-        const errorMessage = Array.isArray(e?.message) ? e.message.join(', ') : (e?.message ?? 'Failed to load teams')
+        const errorMessage = Array.isArray(e?.message) ? e.message.join(', ') : (e?.message ?? 'Failed to load workspaces')
         setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  return { teamForm, loading, error, onSubmit }
+  return { workspaceForm, loading, error, onSubmit }
 }

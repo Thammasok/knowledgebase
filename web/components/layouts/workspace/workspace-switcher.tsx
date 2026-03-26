@@ -28,27 +28,27 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { cn } from '@/lib/utils'
-import TeamCreateModal from './team-create-modal'
-import useTeamListsStore, { type Team } from '@/stores/team-list.store'
-import { useTeamHook } from './use-team-list.hook'
+import WorkspaceCreateModal from './workspace-create-modal'
+import useWorkspaceListsStore, { type Workspace } from '@/stores/workspace-list.store'
+import { useWorkspaceHook } from './use-workspace-list.hook'
 import { setDebounce } from '@/utils/debounce'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 
-// ─── Team avatar ──────────────────────────────────────────────────────────────
+// ─── Workspace avatar ──────────────────────────────────────────────────────────
 
-function TeamAvatar({ team, size = 'md' }: { team: Team; size?: 'sm' | 'md' }) {
+function WorkspaceAvatar({ workspace, size = 'md' }: { workspace: Workspace; size?: 'sm' | 'md' }) {
   return (
     <div
       className={cn(
         'flex shrink-0 items-center justify-center rounded-lg text-white',
         size === 'sm' ? 'size-6' : 'size-8',
       )}
-      style={{ backgroundColor: team.color }}
+      style={{ backgroundColor: workspace.color }}
     >
-      {team.logo ? (
+      {workspace.logo ? (
         <DynamicIcon
-          name={team.logo}
+          name={workspace.logo}
           className={cn('text-white', size === 'sm' ? 'size-3.5' : 'size-4')}
         />
       ) : (
@@ -58,7 +58,7 @@ function TeamAvatar({ team, size = 'md' }: { team: Team; size?: 'sm' | 'md' }) {
             size === 'sm' ? 'text-[10px]' : 'text-xs',
           )}
         >
-          {team.name.charAt(0).toUpperCase()}
+          {workspace.name.charAt(0).toUpperCase()}
         </span>
       )}
     </div>
@@ -67,16 +67,16 @@ function TeamAvatar({ team, size = 'md' }: { team: Team; size?: 'sm' | 'md' }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-interface TeamSwitcherProps {
+interface WorkspaceSwitcherProps {
   isSecound?: boolean
 }
 
-export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
+export function WorkspaceSwitcher({ isSecound = false }: WorkspaceSwitcherProps) {
   const { isMobile } = useSidebar()
-  const { teams, setActiveTeam } = useTeamListsStore()
-  const activeTeam = useTeamListsStore((state) => state.activeTeam)
-  const { loading, loadingMore, total, fetchTeams, fetchMoreTeams } =
-    useTeamHook()
+  const { workspaces, setActiveWorkspace } = useWorkspaceListsStore()
+  const activeWorkspace = useWorkspaceListsStore((state) => state.activeWorkspace)
+  const { loading, loadingMore, total, fetchWorkspaces, fetchMoreWorkspaces } =
+    useWorkspaceHook()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -85,7 +85,7 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
 
   useEffect(() => {
     const rehydrate = async () => {
-      await useTeamListsStore.persist.rehydrate()
+      await useWorkspaceListsStore.persist.rehydrate()
       setMounted(true)
     }
     rehydrate()
@@ -93,8 +93,8 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
 
   // Fetch fresh list from API after hydration
   useEffect(() => {
-    if (mounted) fetchTeams()
-  }, [mounted, fetchTeams])
+    if (mounted) fetchWorkspaces()
+  }, [mounted, fetchWorkspaces])
 
   // Re-fetch when search changes (debounced), skip initial render
   useEffect(() => {
@@ -103,17 +103,17 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
       isFirstRender.current = false
       return
     }
-    setDebounce(() => fetchTeams(search), 500)
-  }, [search, mounted, fetchTeams])
+    setDebounce(() => fetchWorkspaces(search), 500)
+  }, [search, mounted, fetchWorkspaces])
 
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
       const el = e.currentTarget
       if (el.scrollHeight - el.scrollTop <= el.clientHeight + 80) {
-        fetchMoreTeams(search)
+        fetchMoreWorkspaces(search)
       }
     },
-    [fetchMoreTeams, search],
+    [fetchMoreWorkspaces, search],
   )
 
   return (
@@ -130,12 +130,12 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
                 )}
                 disabled={!mounted}
               >
-                {mounted && activeTeam ? (
+                {mounted && activeWorkspace ? (
                   <>
-                    <TeamAvatar team={activeTeam} size="md" />
+                    <WorkspaceAvatar workspace={activeWorkspace} size="md" />
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">
-                        {activeTeam.name}
+                        {activeWorkspace.name}
                       </span>
                     </div>
                     <ChevronsUpDownIcon className="ml-auto" />
@@ -150,7 +150,7 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
               </SidebarMenuButton>
             </DropdownMenuTrigger>
 
-            {mounted && teams && (
+            {mounted && workspaces && (
               <DropdownMenuContent
                 className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
                 align="start"
@@ -159,13 +159,13 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
               >
                 <div className="flex w-full justify-between items-center">
                   <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    {`Teams (${total})`}
+                    {`Workspaces (${total})`}
                   </DropdownMenuLabel>
                   <Link
-                    href="/teams"
+                    href="/workspaces"
                     className={buttonVariants({ size: 'xs', variant: 'link' })}
                   >
-                    All teams
+                    All workspaces
                   </Link>
                 </div>
 
@@ -173,13 +173,13 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
 
                 <Command shouldFilter={false}>
                   <CommandInput
-                    placeholder="Search teams..."
+                    placeholder="Search workspaces..."
                     value={search}
                     onValueChange={setSearch}
                   />
                   <CommandList onScroll={handleScroll}>
-                    {!loading && teams.length === 0 && (
-                      <CommandEmpty>No teams found.</CommandEmpty>
+                    {!loading && workspaces.length === 0 && (
+                      <CommandEmpty>No workspaces found.</CommandEmpty>
                     )}
                     {loading ? (
                       <div className="flex justify-center py-4">
@@ -187,15 +187,15 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
                       </div>
                     ) : (
                       <CommandGroup>
-                        {teams.map((team) => (
+                        {workspaces.map((workspace) => (
                           <CommandItem
-                            key={team.id}
-                            value={team.name}
-                            onSelect={() => setActiveTeam(team)}
+                            key={workspace.id}
+                            value={workspace.name}
+                            onSelect={() => setActiveWorkspace(workspace)}
                             className="cursor-pointer gap-2"
                           >
-                            <TeamAvatar team={team} size="sm" />
-                            <span className="truncate">{team.name}</span>
+                            <WorkspaceAvatar workspace={workspace} size="sm" />
+                            <span className="truncate">{workspace.name}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -222,7 +222,7 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
                         <PlusIcon className="size-4" />
                       </div>
                       <div className="font-medium text-muted-foreground">
-                        Add team
+                        Add workspace
                       </div>
                     </DropdownMenuItem>
                   </>
@@ -233,7 +233,7 @@ export function TeamSwitcher({ isSecound = false }: TeamSwitcherProps) {
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <TeamCreateModal open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <WorkspaceCreateModal open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </>
   )
 }

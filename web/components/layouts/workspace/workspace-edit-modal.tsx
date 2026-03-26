@@ -13,18 +13,18 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Form } from '@/components/ui/form'
-import { type Team } from '@/stores/team-list.store'
-import { TeamCreateForm } from './team-create-form'
-import { useTeamEditHook } from './use-team-edit.hook'
+import { type Workspace } from '@/stores/workspace-list.store'
+import { WorkspaceCreateForm } from './workspace-create-form'
+import { useWorkspaceEditHook } from './use-workspace-edit.hook'
 
-interface TeamEditModalProps {
-  team: Team | null
+interface WorkspaceEditModalProps {
+  workspace: Workspace | null
   onClose: () => void
 }
 
-function TeamEditForm({ team, onClose }: { team: Team; onClose: () => void }) {
-  const { teamForm, loading, error, onSubmit } = useTeamEditHook({
-    team,
+function WorkspaceEditForm({ workspace, onClose }: { workspace: Workspace; onClose: () => void }) {
+  const { workspaceForm, loading, error, onSubmit } = useWorkspaceEditHook({
+    workspace,
     onClose,
   })
 
@@ -33,18 +33,18 @@ function TeamEditForm({ team, onClose }: { team: Team; onClose: () => void }) {
   }
 
   return (
-    <Form {...teamForm}>
-      <form onSubmit={teamForm.handleSubmit(onSubmit)}>
+    <Form {...workspaceForm}>
+      <form onSubmit={workspaceForm.handleSubmit(onSubmit)}>
         <Dialog open onOpenChange={handleOpenChange}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Edit team</DialogTitle>
+              <DialogTitle>Edit workspace</DialogTitle>
               <DialogDescription>
-                Update the team name, icon, or color.
+                Update the workspace name, icon, or color.
               </DialogDescription>
             </DialogHeader>
 
-            <TeamCreateForm form={teamForm} />
+            <WorkspaceCreateForm form={workspaceForm} />
 
             {error && (
               <Alert variant="destructive">
@@ -65,8 +65,8 @@ function TeamEditForm({ team, onClose }: { team: Team; onClose: () => void }) {
               </Button>
               <Button
                 type="submit"
-                onClick={teamForm.handleSubmit(onSubmit)}
-                disabled={!teamForm.watch('name')?.trim() || loading}
+                onClick={workspaceForm.handleSubmit(onSubmit)}
+                disabled={!workspaceForm.watch('name')?.trim() || loading}
               >
                 {loading && <Spinner />}
                 Save changes
@@ -79,7 +79,7 @@ function TeamEditForm({ team, onClose }: { team: Team; onClose: () => void }) {
   )
 }
 
-export function TeamEditModal({ team, onClose }: TeamEditModalProps) {
-  if (!team) return null
-  return <TeamEditForm key={team.id} team={team} onClose={onClose} />
+export function WorkspaceEditModal({ workspace, onClose }: WorkspaceEditModalProps) {
+  if (!workspace) return null
+  return <WorkspaceEditForm key={workspace.id} workspace={workspace} onClose={onClose} />
 }

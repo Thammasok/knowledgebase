@@ -1,33 +1,33 @@
 import { Response, NextFunction } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import RequestWithAccount from '../../boot/express.dto'
-import * as TeamService from './team.service'
+import * as WorkspaceService from './workspace.service'
 import logger from '../../boot/logger'
 
-const LOGGER_NAME = 'TEAM:'
+const LOGGER_NAME = 'WORKSPACE:'
 
-export const createTeam = async (
+export const createWorkspace = async (
   req: RequestWithAccount,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const { name, logo, color } = req.body
-    const team = await TeamService.createTeam({
+    const workspace = await WorkspaceService.createWorkspace({
       accountId: req.account.id,
       name,
       logo,
       color,
     })
 
-    return res.status(StatusCodes.CREATED).json(team)
+    return res.status(StatusCodes.CREATED).json(workspace)
   } catch (error) {
     logger.error({ type: LOGGER_NAME, error })
     next(error)
   }
 }
 
-export const updateTeam = async (
+export const updateWorkspace = async (
   req: RequestWithAccount,
   res: Response,
   next: NextFunction,
@@ -35,7 +35,7 @@ export const updateTeam = async (
   try {
     const { id } = req.params
     const { name, logo, color } = req.body
-    const team = await TeamService.updateTeam({
+    const workspace = await WorkspaceService.updateWorkspace({
       id,
       accountId: req.account.id,
       name,
@@ -43,21 +43,21 @@ export const updateTeam = async (
       color,
     })
 
-    return res.status(StatusCodes.OK).json(team)
+    return res.status(StatusCodes.OK).json(workspace)
   } catch (error) {
     logger.error({ type: LOGGER_NAME, error })
     next(error)
   }
 }
 
-export const getTeams = async (
+export const getWorkspaces = async (
   req: RequestWithAccount,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const { search = '', page = 1, limit = 20 } = req.query
-    const result = await TeamService.getTeams({
+    const result = await WorkspaceService.getWorkspaces({
       accountId: req.account.id,
       search: String(search),
       page: Number(page),

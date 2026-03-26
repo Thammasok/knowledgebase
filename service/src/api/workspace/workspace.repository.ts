@@ -1,26 +1,26 @@
 import db from '../../libs/db/prisma'
 
-export interface ICreateTeam {
+export interface ICreateWorkspace {
   accountId: string
   name: string
   logo?: string | null
   color?: string
 }
 
-export interface IGetTeams {
+export interface IGetWorkspaces {
   accountId: string
   search?: string
   page: number
   limit: number
 }
 
-export const createTeam = async ({
+export const createWorkspace = async ({
   accountId,
   name,
   logo,
   color,
-}: ICreateTeam) => {
-  return await db.team.create({
+}: ICreateWorkspace) => {
+  return await db.workspace.create({
     data: {
       accountId,
       name,
@@ -38,7 +38,7 @@ export const createTeam = async ({
   })
 }
 
-export interface IUpdateTeam {
+export interface IUpdateWorkspace {
   id: string
   accountId: string
   name: string
@@ -46,8 +46,8 @@ export interface IUpdateTeam {
   color?: string
 }
 
-export const updateTeam = async ({ id, accountId, name, logo, color }: IUpdateTeam) => {
-  return await db.team.update({
+export const updateWorkspace = async ({ id, accountId, name, logo, color }: IUpdateWorkspace) => {
+  return await db.workspace.update({
     where: { id, accountId, isRemove: false },
     data: {
       name,
@@ -64,12 +64,12 @@ export const updateTeam = async ({ id, accountId, name, logo, color }: IUpdateTe
   })
 }
 
-export const getTeamsByAccountId = async ({
+export const getWorkspacesByAccountId = async ({
   accountId,
   search,
   page,
   limit,
-}: IGetTeams) => {
+}: IGetWorkspaces) => {
   const where = {
     accountId,
     isRemove: false,
@@ -77,7 +77,7 @@ export const getTeamsByAccountId = async ({
   }
 
   const [data, total] = await db.$transaction([
-    db.team.findMany({
+    db.workspace.findMany({
       where,
       select: {
         id: true,
@@ -90,7 +90,7 @@ export const getTeamsByAccountId = async ({
       skip: (page - 1) * limit,
       take: limit,
     }),
-    db.team.count({ where }),
+    db.workspace.count({ where }),
   ])
 
   return { data, total }

@@ -44,7 +44,7 @@ model Accounts {
   accountForgotPassword AccountForgotPassword?
   authSessions          AuthSession[]
   accountSetting        AccountSetting?
-  teams                 Team[]
+  workspaces            Workspace[]
 
   // Mapping
   @@map("accounts")
@@ -116,13 +116,13 @@ model AccountSetting {
  * --------------------------------------------------------------------
  */
 /**
- * Teams
+ * Workspaces
  */
 /**
  * --------------------------------------------------------------------
  */
 
-model Team {
+model Workspace {
   id        String   @id @unique @default(ulid())
   accountId String   @db.VarChar(128)
   name      String   @db.VarChar(255)
@@ -136,7 +136,7 @@ model Team {
   account Accounts @relation(fields: [accountId], references: [id])
 
   // Mapping
-  @@map("teams")
+  @@map("workspaces")
   @@schema("main")
 }
 

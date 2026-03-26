@@ -4,16 +4,16 @@ import { useRouter } from 'next/navigation'
 import { AlertCircleIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { useTeamCreateHook } from '@/components/layouts/team/use-team-create.hook'
+import { useWorkspaceCreateHook } from '@/components/layouts/workspace/use-workspace-create.hook'
 import { Form } from '@/components/ui/form'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { TeamCreateForm } from '@/components/layouts/team/team-create-form'
+import { WorkspaceCreateForm } from '@/components/layouts/workspace/workspace-create-form'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TeamCreatePage = () => {
+const WorkspaceCreatePage = () => {
   const router = useRouter()
-  const { teamForm, loading, error, onSubmit } = useTeamCreateHook({
+  const { workspaceForm, loading, error, onSubmit } = useWorkspaceCreateHook({
     onClose: () => router.push('/dashboard'),
   })
 
@@ -23,20 +23,20 @@ const TeamCreatePage = () => {
         {/* Header */}
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Create a new team
+            Create a new workspace
           </h1>
           <p className="text-sm text-muted-foreground">
-            Choose an icon, color, and give your team a name.
+            Choose an icon, color, and give your workspace a name.
           </p>
         </div>
 
         {/* Form */}
-        <Form {...teamForm}>
+        <Form {...workspaceForm}>
           <form
-            onSubmit={teamForm.handleSubmit(onSubmit)}
+            onSubmit={workspaceForm.handleSubmit(onSubmit)}
             className="space-y-6"
           >
-            <TeamCreateForm form={teamForm} />
+            <WorkspaceCreateForm form={workspaceForm} />
 
             {error && (
               <Alert variant="destructive">
@@ -50,10 +50,10 @@ const TeamCreatePage = () => {
               <Button
                 type="submit"
                 className="flex-1"
-                disabled={!teamForm.watch('name').trim() || loading}
+                disabled={!workspaceForm.watch('name').trim() || loading}
               >
                 {loading && <Spinner />}
-                Create team
+                Create workspace
               </Button>
             </div>
           </form>
@@ -63,4 +63,4 @@ const TeamCreatePage = () => {
   )
 }
 
-export default TeamCreatePage
+export default WorkspaceCreatePage
