@@ -65,6 +65,20 @@ CREATE TABLE "account_settings" (
     "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "workspaces" (
+    "id" TEXT NOT NULL,
+    "accountId" VARCHAR(128) NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "logo" VARCHAR(128),
+    "color" VARCHAR(32) NOT NULL DEFAULT '#18181b',
+    "isRemove" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "workspaces_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "accounts_id_key" ON "accounts"("id");
 
@@ -83,6 +97,9 @@ CREATE UNIQUE INDEX "account_forgot_passwords_accountId_key" ON "account_forgot_
 -- CreateIndex
 CREATE UNIQUE INDEX "account_settings_accountId_key" ON "account_settings"("accountId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "workspaces_id_key" ON "workspaces"("id");
+
 -- AddForeignKey
 ALTER TABLE "account_forgot_passwords" ADD CONSTRAINT "account_forgot_passwords_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -91,3 +108,6 @@ ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_accountId_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "account_settings" ADD CONSTRAINT "account_settings_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "workspaces" ADD CONSTRAINT "workspaces_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

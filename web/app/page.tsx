@@ -79,15 +79,15 @@ export default function Home() {
       <div
         className={cn(
           'bg-base-200 min-h-screen rounded-b-lg bg-cover bg-center bg-no-repeat',
-          `bg-[url('https://images.unsplash.com/photo-1766040923580-16ad32fae8b4?q=80&w=2232&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] `,
+          `bg-[url('https://images.unsplash.com/photo-1531256379416-9f000e90aacc?q=80&w=1674&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')] `,
         )}
       >
         <div className="flex justify-center items-center align-middle h-screen text-center">
           <div className="max-w-lg">
-            <h1 className="text-5xl leading-14 font-bold text-gray-100">
+            <h1 className="text-5xl leading-14 font-bold text-gray-800">
               Welcome to {globalConfig.app.name}
             </h1>
-            <p className="py-6 text-gray-200">{globalConfig.app.description}</p>
+            <p className="py-6 text-gray-600">{globalConfig.app.description}</p>
             <Link
               href="/auth/request-access"
               className={cn(buttonVariants({ variant: 'default' }))}

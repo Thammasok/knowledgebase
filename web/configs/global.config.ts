@@ -1,8 +1,8 @@
 const globalConfig = {
   app: {
-    name: 'SAN.ai',
-    description: 'AI assistant for Business',
-    logoName: 'SAN AI',
+    name: 'Know',
+    description: 'Knowledge Learning and AI Integration',
+    logoName: 'KNOW',
     logo: '/logo.png',
     logoIcon: '/favicon.ico',
   },
