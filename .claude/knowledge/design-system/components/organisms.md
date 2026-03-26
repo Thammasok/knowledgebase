@@ -1,6 +1,8 @@
-# Organisms — Complex UI Sections
+# Organisms — Complex UI Sections (shadcn/ui)
 
 Organisms combine molecules and atoms into distinct sections of the UI.
+
+> **Note:** Install components via CLI: `pnpm shadcn add <component>`
 
 ---
 
@@ -124,6 +126,10 @@ A complete form section with field layout, submission, and validation feedback.
 
 ## Data Table
 
+**Install:** `pnpm shadcn add table` (base styles)
+
+For full-featured tables, use [@tanstack/react-table](https://tanstack.com/table) with shadcn Table.
+
 ### Features
 - Sortable columns
 - Row selection (checkbox)
@@ -131,36 +137,41 @@ A complete form section with field layout, submission, and validation feedback.
 - Empty state
 - Loading skeleton
 
-### Anatomy
-```
-┌────────────────────────────────────────────────────────┐
-│ [Table Title]                        [Search] [Filter] │
-│────────────────────────────────────────────────────────│
-│ [☐] Name ▲   Email          Role    Actions           │  ← thead
-│────────────────────────────────────────────────────────│
-│ [☐] Alice    a@example.com  Admin   [Edit] [Delete]   │  ← tbody
-│ [☐] Bob      b@example.com  User    [Edit] [Delete]   │
-│────────────────────────────────────────────────────────│
-│ Showing 1–10 of 47     [< 1 2 3 4 5 >]                │  ← tfoot / pagination
-└────────────────────────────────────────────────────────┘
+### Usage (shadcn/ui Table)
+```tsx
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+
+<Table>
+  <TableCaption>A list of recent invoices.</TableCaption>
+  <TableHeader>
+    <TableRow>
+      <TableHead className="w-[100px]">Invoice</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead className="text-right">Amount</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {invoices.map((invoice) => (
+      <TableRow key={invoice.id}>
+        <TableCell className="font-medium">{invoice.id}</TableCell>
+        <TableCell>{invoice.status}</TableCell>
+        <TableCell className="text-right">{invoice.amount}</TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</Table>
 ```
 
-### Accessibility
-```tsx
-<table aria-label="Users" aria-rowcount={totalRows} aria-busy={loading}>
-  <caption className="sr-only">Users list, sorted by name ascending</caption>
-  <thead>
-    <tr>
-      <th scope="col">
-        <input type="checkbox" aria-label="Select all rows" />
-      </th>
-      <th scope="col" aria-sort="ascending">
-        <button>Name <SortIcon /></button>
-      </th>
-    </tr>
-  </thead>
-</table>
-```
+### With TanStack Table (sorting, filtering, pagination)
+See shadcn Data Table example: https://ui.shadcn.com/docs/components/data-table
 
 - `aria-sort="ascending|descending|none"` on sorted column header
 - `aria-selected="true"` on selected rows
@@ -170,60 +181,124 @@ A complete form section with field layout, submission, and validation feedback.
 
 ## Modal / Dialog
 
-### Anatomy
+**Install:** `pnpm shadcn add dialog`
+
+### Usage (shadcn/ui Dialog)
+```tsx
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+
+<Dialog>
+  <DialogTrigger asChild>
+    <Button variant="outline">Open Dialog</Button>
+  </DialogTrigger>
+  <DialogContent className="sm:max-w-[425px]">
+    <DialogHeader>
+      <DialogTitle>Edit profile</DialogTitle>
+      <DialogDescription>
+        Make changes to your profile here. Click save when done.
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      {/* Form content */}
+    </div>
+    <DialogFooter>
+      <DialogClose asChild>
+        <Button variant="outline">Cancel</Button>
+      </DialogClose>
+      <Button type="submit">Save changes</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 ```
-[Overlay backdrop]
-┌──────────────────────────────┐
-│ Title                  [✕]  │  ← header
-│──────────────────────────────│
-│                              │  ← body (scrollable)
-│ Content                      │
-│──────────────────────────────│
-│ [Cancel]          [Confirm] │  ← footer
-└──────────────────────────────┘
+
+### Controlled Dialog
+```tsx
+const [open, setOpen] = useState(false)
+
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent>
+    {/* ... */}
+  </DialogContent>
+</Dialog>
+
+// Open programmatically
+<Button onClick={() => setOpen(true)}>Open</Button>
 ```
 
 ### Spec
-| Size | Max-width |
+| Size | Class |
 |---|---|
-| sm | 400px |
-| md | 560px |
-| lg | 720px |
-| xl | 960px |
-| full | 100vw - 32px |
+| sm | `sm:max-w-[400px]` |
+| md | `sm:max-w-[560px]` (default) |
+| lg | `sm:max-w-[720px]` |
+| xl | `sm:max-w-[960px]` |
 
-### Accessibility (Critical)
-```tsx
-<div
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="modal-title"
-  aria-describedby="modal-desc"
->
-  <h2 id="modal-title">Confirm deletion</h2>
-  <p id="modal-desc">This action cannot be undone.</p>
-</div>
-```
-
-**Focus management (mandatory):**
-1. On open: move focus to first focusable element (or modal container if none)
-2. Trap focus inside modal while open (Tab / Shift+Tab cycle within)
-3. On close: return focus to trigger element
-
-**Close triggers:** Escape key, backdrop click (configurable), close button
+- shadcn Dialog uses Radix UI (handles all focus management + ARIA automatically)
+- **Close triggers:** Escape key, backdrop click, close button
 
 ---
 
-## Drawer
+## Drawer / Sheet
+
+**Install:** `pnpm shadcn add sheet`
 
 Like modal but slides in from an edge.
 
-| Placement | Width / Height |
-|---|---|
-| left / right | 320px default (resizable) |
-| top / bottom | 50vh default |
+### Usage (shadcn/ui Sheet)
+```tsx
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
-- Same focus management as Modal
-- `aria-label` for non-titled drawers
-- `z-index: {zIndex.modal}` (400)
-- Backdrop: `rgba(0,0,0,0.5)` with `backdrop-blur-sm`
+<Sheet>
+  <SheetTrigger asChild>
+    <Button variant="outline">Open Sheet</Button>
+  </SheetTrigger>
+  <SheetContent>
+    <SheetHeader>
+      <SheetTitle>Edit profile</SheetTitle>
+      <SheetDescription>
+        Make changes to your profile here.
+      </SheetDescription>
+    </SheetHeader>
+    <div className="py-4">
+      {/* Content */}
+    </div>
+    <SheetFooter>
+      <SheetClose asChild>
+        <Button type="submit">Save changes</Button>
+      </SheetClose>
+    </SheetFooter>
+  </SheetContent>
+</Sheet>
+```
+
+### Placement
+```tsx
+// Default: right
+<SheetContent side="right">...</SheetContent>
+
+// Other sides
+<SheetContent side="left">...</SheetContent>
+<SheetContent side="top">...</SheetContent>
+<SheetContent side="bottom">...</SheetContent>
+```
+
+- shadcn Sheet uses Radix UI Dialog (handles focus management + ARIA automatically)
+- `z-index: 50` (default from Tailwind)

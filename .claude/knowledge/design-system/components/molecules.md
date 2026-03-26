@@ -1,10 +1,14 @@
-# Molecules — Composite Components
+# Molecules — Composite Components (shadcn/ui)
 
 Molecules are components built from 2+ atoms working together as a functional unit.
+
+> **Note:** Install components via CLI: `pnpm shadcn add <component>`
 
 ---
 
 ## Form Field
+
+**Install:** `pnpm shadcn add form` (uses react-hook-form + zod)
 
 Combines: Label + Input + Helper Text + Error Message
 
@@ -31,6 +35,35 @@ Combines: Label + Input + Helper Text + Error Message
 - Error replaces helper text (never show both)
 - `aria-required="true"` on required inputs
 - Field width defaults to 100% of container
+
+### Usage (shadcn/ui Form)
+```tsx
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+
+const form = useForm<FormValues>({
+  resolver: zodResolver(formSchema),
+})
+
+<Form {...form}>
+  <FormField
+    control={form.control}
+    name="email"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Email</FormLabel>
+        <FormControl>
+          <Input placeholder="you@example.com" {...field} />
+        </FormControl>
+        <FormDescription>We'll never share your email.</FormDescription>
+        <FormMessage />  {/* Shows validation errors */}
+      </FormItem>
+    )}
+  />
+</Form>
+```
 
 ---
 
@@ -71,37 +104,59 @@ Combines: Input + Search Icon (prefix) + Clear Button (suffix) + optional Dropdo
 
 ## Card
 
+**Install:** `pnpm shadcn add card`
+
 Combines: Surface + Shadow + Padding + optional Header / Body / Footer
 
-### Variants
-- `flat` — no shadow, border only
-- `elevated` — `shadows.elevation.sm`
-- `interactive` — hover/focus state, acts as link or button
-- `selected` — highlighted border + bg tint
-
-### Anatomy
+### Anatomy (shadcn)
 ```
 ┌─────────────────────────────────┐
-│ [Card Header: title + actions]  │
+│ CardHeader                      │
+│   CardTitle + CardDescription   │
 │─────────────────────────────────│
-│ [Card Body: main content]       │
+│ CardContent                     │
 │─────────────────────────────────│
-│ [Card Footer: actions / meta]   │
+│ CardFooter                      │
 └─────────────────────────────────┘
+```
+
+### Usage (shadcn/ui Card)
+```tsx
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+
+<Card>
+  <CardHeader>
+    <CardTitle>Card Title</CardTitle>
+    <CardDescription>Card description text</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p>Card content goes here.</p>
+  </CardContent>
+  <CardFooter>
+    <Button>Action</Button>
+  </CardFooter>
+</Card>
 ```
 
 ### Interactive Card
 ```tsx
-// Entire card is clickable — use <article> or <section> + button
-<article
-  className="cursor-pointer rounded-lg border hover:border-primary focus-within:ring-2"
-  onClick={handleClick}
->
-  {/* Primary action as <a> or <button> that stretches to card */}
-  <a href={href} className="focus:outline-none after:absolute after:inset-0">
-    {title}
-  </a>
-</article>
+// Entire card is clickable — use wrapper with relative positioning
+<Card className="cursor-pointer hover:border-primary transition-colors">
+  <CardHeader>
+    <CardTitle>
+      <a href={href} className="after:absolute after:inset-0">
+        {title}
+      </a>
+    </CardTitle>
+  </CardHeader>
+</Card>
 ```
 
 ---
@@ -132,82 +187,105 @@ Combines: Icon (optional) + Label + Badge (optional) + Active Indicator
 
 ## Alert
 
-Variants: `info` | `success` | `warning` | `error`
-Dismissible: yes/no
+**Install:** `pnpm shadcn add alert`
 
-### Anatomy
-```
-[icon] [title]          [✕ dismiss?]
-       [description]
-       [actions?]
-```
+**Variants (shadcn):** `default` | `destructive`
 
-| Variant | Icon | Color scheme |
-|---|---|---|
-| info | InfoCircle | blue |
-| success | CheckCircle | green |
-| warning | AlertTriangle | yellow |
-| error | XCircle | red |
-
+### Usage (shadcn/ui Alert)
 ```tsx
-<div role="alert" aria-live="polite" className="alert alert--error">
-  <AlertIcon aria-hidden="true" />
-  <div>
-    <p className="font-medium">{title}</p>
-    <p>{description}</p>
-  </div>
-  {dismissible && (
-    <button aria-label="Dismiss alert" onClick={onDismiss}>
-      <X aria-hidden="true" />
-    </button>
-  )}
-</div>
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Terminal, AlertCircle } from "lucide-react"
+
+// Default (info-style)
+<Alert>
+  <Terminal className="h-4 w-4" />
+  <AlertTitle>Heads up!</AlertTitle>
+  <AlertDescription>
+    You can add components to your app using the CLI.
+  </AlertDescription>
+</Alert>
+
+// Destructive (error-style)
+<Alert variant="destructive">
+  <AlertCircle className="h-4 w-4" />
+  <AlertTitle>Error</AlertTitle>
+  <AlertDescription>
+    Your session has expired. Please log in again.
+  </AlertDescription>
+</Alert>
 ```
 
-- `role="alert"` for error/warning (assertive)
-- `role="status"` + `aria-live="polite"` for info/success
+### Custom Variants (extend via className)
+| Need | Approach |
+|---|---|
+| Success | `className="border-green-500 text-green-700"` |
+| Warning | `className="border-yellow-500 text-yellow-700"` |
+
+- shadcn Alert has `role="alert"` built-in
 - Icon must be `aria-hidden` — meaning is conveyed by color + text
 
 ---
 
-## Dropdown (Menu)
+## Dropdown Menu
+
+**Install:** `pnpm shadcn add dropdown-menu`
 
 Combines: Trigger Button + Floating Menu + Menu Items
 
-### Anatomy
-```
-[Trigger Button ▾]
-  ┌──────────────┐
-  │ Menu Item    │
-  │ Menu Item    │
-  │ ───────────  │  ← separator
-  │ Danger Item  │
-  └──────────────┘
-```
-
-### ARIA Pattern
+### Usage (shadcn/ui DropdownMenu)
 ```tsx
-<button
-  aria-haspopup="menu"
-  aria-expanded={open}
-  aria-controls="menu-id"
->
-  Options
-</button>
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-<ul id="menu-id" role="menu" aria-label="Options">
-  <li role="menuitem" tabIndex={-1}>Edit</li>
-  <li role="menuitem" tabIndex={-1}>Duplicate</li>
-  <li role="separator" />
-  <li role="menuitem" tabIndex={-1} className="text-red-600">Delete</li>
-</ul>
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="outline">Options</Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem>Profile</DropdownMenuItem>
+    <DropdownMenuItem>Settings</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem className="text-destructive">
+      Delete Account
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
 ```
 
-### Keyboard
-| Key | Action |
-|---|---|
-| Enter / Space | Open menu, activate item |
-| Arrow Down/Up | Navigate items |
-| Home / End | First / last item |
-| Escape | Close menu, return focus to trigger |
-| Tab | Close menu |
+### Advanced Features
+```tsx
+// With keyboard shortcuts
+<DropdownMenuItem>
+  New Tab <DropdownMenuShortcut>⌘T</DropdownMenuShortcut>
+</DropdownMenuItem>
+
+// With checkboxes
+<DropdownMenuCheckboxItem checked={checked} onCheckedChange={setChecked}>
+  Show Toolbar
+</DropdownMenuCheckboxItem>
+
+// With radio groups
+<DropdownMenuRadioGroup value={position} onValueChange={setPosition}>
+  <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
+  <DropdownMenuRadioItem value="bottom">Bottom</DropdownMenuRadioItem>
+</DropdownMenuRadioGroup>
+
+// Submenus
+<DropdownMenuSub>
+  <DropdownMenuSubTrigger>More</DropdownMenuSubTrigger>
+  <DropdownMenuSubContent>
+    <DropdownMenuItem>Sub Item</DropdownMenuItem>
+  </DropdownMenuSubContent>
+</DropdownMenuSub>
+```
+
+- shadcn DropdownMenu uses Radix UI (handles all ARIA + keyboard automatically)
+- Keyboard: Arrow keys navigate, Enter/Space activate, Escape closes

@@ -96,21 +96,52 @@ import { Button } from "@/components/ui/button"
 - `aria-invalid="true"` on error state
 - `aria-describedby` links input to helper/error text
 
+### Usage (shadcn/ui — install via `pnpm shadcn add input`)
+```tsx
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+
+// Basic
+<Input type="email" placeholder="Email" />
+
+// With label (use shadcn Label component)
+<div className="grid w-full max-w-sm items-center gap-1.5">
+  <Label htmlFor="email">Email</Label>
+  <Input type="email" id="email" placeholder="Email" />
+</div>
+
+// Disabled
+<Input disabled type="email" placeholder="Email" />
+
+// With error styling (apply via className)
+<Input type="email" className="border-destructive" aria-invalid="true" />
+```
+
 ---
 
 ## Label
 
-**Variants:** `default` | `required` | `optional` | `disabled`
+**Install:** `pnpm shadcn add label`
 
 ```tsx
-<label htmlFor={id} className="text-sm font-medium text-neutral-700">
-  {children}
-  {required && <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>}
-</label>
+import { Label } from "@/components/ui/label"
+
+// Basic
+<Label htmlFor="email">Email</Label>
+
+// With required indicator
+<Label htmlFor="email">
+  Email <span className="text-destructive">*</span>
+</Label>
+
+// Disabled state (via peer)
+<Label htmlFor="email" className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+  Email
+</Label>
 ```
 
 - Never use `color` alone to indicate required state — pair with text or symbol
-- Font: `labelMd`
+- shadcn Label uses Radix UI Label primitive for accessibility
 
 ---
 
@@ -155,11 +186,28 @@ Padding: 2px 8px | Radius: semantic.radius.badge | Font: labelSm
 
 ## Checkbox
 
+**Install:** `pnpm shadcn add checkbox`
 **States:** unchecked | checked | indeterminate | disabled
 
-- Must be a real `<input type="checkbox">` — never a styled div
-- `indeterminate` state set via JS: `el.indeterminate = true`
-- `aria-checked="mixed"` for indeterminate
+```tsx
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+
+// Basic
+<Checkbox id="terms" />
+
+// With label
+<div className="flex items-center space-x-2">
+  <Checkbox id="terms" />
+  <Label htmlFor="terms">Accept terms and conditions</Label>
+</div>
+
+// Disabled
+<Checkbox id="terms" disabled />
+```
+
+- shadcn Checkbox uses Radix UI Checkbox (not native input)
+- `data-state="checked"` | `data-state="unchecked"` | `data-state="indeterminate"`
 - Click target minimum 44×44px (includes visible label)
 
 ---
@@ -174,36 +222,67 @@ Padding: 2px 8px | Radius: semantic.radius.badge | Font: labelSm
 
 ---
 
-## Toggle (Switch)
+## Switch (Toggle)
 
+**Install:** `pnpm shadcn add switch`
 **States:** off | on | disabled
 
 ```tsx
-<button
-  role="switch"
-  aria-checked={checked}
-  aria-label="Enable notifications"
-  className="..."
-/>
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+
+// Basic
+<Switch id="airplane-mode" />
+
+// With label
+<div className="flex items-center space-x-2">
+  <Switch id="airplane-mode" />
+  <Label htmlFor="airplane-mode">Airplane Mode</Label>
+</div>
+
+// Controlled
+<Switch checked={enabled} onCheckedChange={setEnabled} />
 ```
 
-- Must use `role="switch"` + `aria-checked`
-- Labelled via `aria-label` or `aria-labelledby`
+- shadcn Switch uses Radix UI Switch primitive
+- Handles `role="switch"` + `aria-checked` automatically
 - Click + Enter + Space activate toggle
 
 ---
 
 ## Tooltip
 
+**Install:** `pnpm shadcn add tooltip`
 **Trigger:** hover (150ms delay) | focus (immediate)
 **Position:** top | right | bottom | left (auto-flip when near viewport edge)
 
 ```tsx
-<div role="tooltip" id="tip-id">Tooltip content</div>
-<button aria-describedby="tip-id">Trigger</button>
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
+// Wrap app or section with TooltipProvider
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button variant="outline">Hover me</Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      <p>Tooltip content</p>
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+
+// With positioning
+<TooltipContent side="right" sideOffset={5}>
+  <p>Right side tooltip</p>
+</TooltipContent>
 ```
 
+- shadcn Tooltip uses Radix UI Tooltip primitive
 - Max width: 240px with text wrapping
 - Never put interactive content inside tooltip
-- Hide on Escape, mouse-leave, blur
 - Don't use for critical information — it's not accessible on touch
