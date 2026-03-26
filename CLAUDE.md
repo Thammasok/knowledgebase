@@ -76,11 +76,17 @@ See `docs/env-setup.md` for variable details.
 
 ## AI Agent Workflow
 
-This repo uses a multi-agent workflow (see `AI-AGENT-WORKFLOW.md`) with skills:
+This repo uses a multi-agent workflow (see `AI-AGENT-WORKFLOW.md`) with skills located in `.claude/skills/`:
 - `business-analysis` — Requirements (US/FR/NFR)
 - `software-tester-design` — Test design before implementation
 - `software-architecture` — API contracts, DB schema, OpenAPI
 - `ai-orchestrator` — TDD loop (Red-Green-Refactor)
 - `project-management` — Sprint planning, task breakdown
+- `software-engineer` — Code implementation and review
+- `software-tester` — Testing assistance
+- `software-tester-automation` — Test automation scripts
+- `technical-writer` — User documentation
+- `ux-ui-designer` — UX/UI design assistance
+- `agent-team-development` — Parallel team development
 
 Artifacts follow `.claude/artifacts/ARTIFACTS.md` conventions (e.g., `US-AUTH-001`, `TC-AUTH-001`).
