@@ -41,6 +41,22 @@ export const authApiPath = {
     getWorkspaces: '/api/v1/workspace',
     createWorkspace: '/api/v1/workspace',
     updateWorkspace: '/api/v1/workspace',
+    getFolders: (workspaceId: string) => `/api/v1/workspace/${workspaceId}/folder`,
+    createFolder: (workspaceId: string) => `/api/v1/workspace/${workspaceId}/folder`,
+    updateFolder: (workspaceId: string, folderId: string) =>
+      `/api/v1/workspace/${workspaceId}/folder/${folderId}`,
+    deleteFolder: (workspaceId: string, folderId: string) =>
+      `/api/v1/workspace/${workspaceId}/folder/${folderId}`,
+    getPages: (workspaceId: string) => `/api/v1/workspace/${workspaceId}/page`,
+    createPage: (workspaceId: string) => `/api/v1/workspace/${workspaceId}/page`,
+    getPage: (workspaceId: string, pageId: string) =>
+      `/api/v1/workspace/${workspaceId}/page/${pageId}`,
+    updatePage: (workspaceId: string, pageId: string) =>
+      `/api/v1/workspace/${workspaceId}/page/${pageId}`,
+    updatePageContent: (workspaceId: string, pageId: string) =>
+      `/api/v1/workspace/${workspaceId}/page/${pageId}/content`,
+    deletePage: (workspaceId: string, pageId: string) =>
+      `/api/v1/workspace/${workspaceId}/page/${pageId}`,
   },
   customer: {
     createCustomer: '/api/v1/customer',

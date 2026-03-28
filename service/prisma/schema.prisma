@@ -37,6 +37,7 @@ model Accounts {
   source            String?  @db.VarChar(255)
   isVerify          Boolean  @default(false)
   isRemove          Boolean  @default(false)
+  tier              Tier     @default(free)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -123,20 +124,72 @@ model AccountSetting {
  */
 
 model Workspace {
-  id        String   @id @unique @default(ulid())
-  accountId String   @db.VarChar(128)
-  name      String   @db.VarChar(255)
-  logo      String?  @db.VarChar(128)
-  color     String   @default("#18181b") @db.VarChar(32)
-  isRemove  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @unique @default(ulid())
+  accountId  String   @db.VarChar(128)
+  name       String   @db.VarChar(255)
+  logo       String?  @db.VarChar(128)
+  color      String   @default("#18181b") @db.VarChar(32)
+  blockCount Int      @default(0)
+  isRemove   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relation
   account Accounts @relation(fields: [accountId], references: [id])
+  folders Folder[]
+  pages   Page[]
 
   // Mapping
   @@map("workspaces")
+  @@schema("main")
+}
+
+model Folder {
+  id          String   @id @unique @default(ulid())
+  workspaceId String   @db.VarChar(128)
+  parentId    String?  @db.VarChar(128)
+  name        String   @db.VarChar(255)
+  depth       Int      @default(0)
+  order       Int      @default(0)
+  isRemove    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relation
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  parent    Folder?   @relation("FolderChildren", fields: [parentId], references: [id])
+  children  Folder[]  @relation("FolderChildren")
+  pages     Page[]
+
+  // Mapping
+  @@index([workspaceId, parentId])
+  @@map("folders")
+  @@schema("main")
+}
+
+model Page {
+  id           String   @id @unique @default(ulid())
+  workspaceId  String   @db.VarChar(128)
+  folderId     String?  @db.VarChar(128)
+  parentPageId String?  @db.VarChar(128)
+  title        String   @default("Untitled") @db.VarChar(500)
+  content      Json     @default("[]")
+  depth        Int      @default(0)
+  order        Int      @default(0)
+  isRemove     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relation
+  workspace  Workspace @relation(fields: [workspaceId], references: [id])
+  folder     Folder?   @relation(fields: [folderId], references: [id])
+  parent     Page?     @relation("PageChildren", fields: [parentPageId], references: [id])
+  children   Page[]    @relation("PageChildren")
+
+  // Mapping
+  @@index([workspaceId, folderId])
+  @@index([workspaceId, parentPageId])
+  @@map("pages")
   @@schema("main")
 }
 
@@ -144,6 +197,15 @@ enum Theme {
   light
   dark
   system
+
+  // Mapping
+  @@schema("main")
+}
+
+enum Tier {
+  free
+  personal
+  startup
 
   // Mapping
   @@schema("main")

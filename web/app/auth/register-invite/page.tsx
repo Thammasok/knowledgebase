@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import globalConfig from '@/configs/global.config'
@@ -22,7 +23,9 @@ export default function SignupPage() {
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <RegisterInviteForm />
+            <Suspense>
+              <RegisterInviteForm />
+            </Suspense>
           </div>
         </div>
       </div>
