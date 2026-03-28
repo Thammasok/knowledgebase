@@ -5,6 +5,7 @@ import accountRouters from './account/account.route'
 import workspaceRouters from './workspace/workspace.route'
 import folderRouters from './folder/folder.route'
 import pageRouters from './page/page.route'
+import collabRouters from './workspace/collab/collab.route'
 
 // Routes
 export default [
@@ -13,6 +14,7 @@ export default [
   authSessionRouters,
   accountRouters,
   workspaceRouters,
+  collabRouters,
   folderRouters,
   pageRouters,
 ]

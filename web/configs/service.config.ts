@@ -61,6 +61,14 @@ export const authApiPath = {
       `/api/v1/workspace/${workspaceId}/page/${pageId}/versions`,
     restorePageVersion: (workspaceId: string, pageId: string, versionId: string) =>
       `/api/v1/workspace/${workspaceId}/page/${pageId}/versions/${versionId}/restore`,
+    getMembers: (workspaceId: string) => `/api/v1/workspace/${workspaceId}/members`,
+    inviteMember: (workspaceId: string) => `/api/v1/workspace/${workspaceId}/invitations`,
+    updateMemberRole: (workspaceId: string, memberId: string) =>
+      `/api/v1/workspace/${workspaceId}/members/${memberId}`,
+    removeMember: (workspaceId: string, memberId: string) =>
+      `/api/v1/workspace/${workspaceId}/members/${memberId}`,
+    getInvitationInfo: (token: string) => `/api/v1/workspace/invitations/${token}`,
+    acceptInvitation: '/api/v1/workspace/invitations/accept',
   },
   customer: {
     createCustomer: '/api/v1/customer',

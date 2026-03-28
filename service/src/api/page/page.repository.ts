@@ -43,7 +43,7 @@ export interface IUpdatePageContent {
 
 export const getPagesByWorkspaceId = async ({
   workspaceId,
-  accountId,
+  accountId: _accountId,
 }: {
   workspaceId: string
   accountId: string
@@ -51,7 +51,6 @@ export const getPagesByWorkspaceId = async ({
   return await db.page.findMany({
     where: {
       workspaceId,
-      workspace: { accountId },
       isRemove: false,
     },
     select: pageListSelect,
@@ -62,7 +61,7 @@ export const getPagesByWorkspaceId = async ({
 export const getPageById = async ({
   id,
   workspaceId,
-  accountId,
+  accountId: _accountId,
 }: {
   id: string
   workspaceId: string
@@ -72,7 +71,6 @@ export const getPageById = async ({
     where: {
       id,
       workspaceId,
-      workspace: { accountId },
       isRemove: false,
     },
     select: pageDetailSelect,
@@ -125,12 +123,11 @@ export const createPage = async ({
   })
 }
 
-export const updatePage = async ({ id, workspaceId, accountId, title, order }: IUpdatePage) => {
+export const updatePage = async ({ id, workspaceId, accountId: _accountId, title, order }: IUpdatePage) => {
   return await db.page.update({
     where: {
       id,
       workspaceId,
-      workspace: { accountId },
       isRemove: false,
     },
     data: {
@@ -141,12 +138,11 @@ export const updatePage = async ({ id, workspaceId, accountId, title, order }: I
   })
 }
 
-export const updatePageContent = async ({ id, workspaceId, accountId, blocks }: IUpdatePageContent) => {
+export const updatePageContent = async ({ id, workspaceId, accountId: _accountId, blocks }: IUpdatePageContent) => {
   return await db.page.update({
     where: {
       id,
       workspaceId,
-      workspace: { accountId },
       isRemove: false,
     },
     data: { content: blocks as any },

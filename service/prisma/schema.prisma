@@ -47,6 +47,8 @@ model Accounts {
   accountSetting        AccountSetting?
   workspaces            Workspace[]
   pageVersions          PageVersion[]
+  workspaceMemberships  WorkspaceMember[]
+  sentInvitations       WorkspaceInvitation[] @relation("InvitedBy")
 
   // Mapping
   @@map("accounts")
@@ -136,12 +138,56 @@ model Workspace {
   updatedAt  DateTime @updatedAt
 
   // Relation
-  account Accounts @relation(fields: [accountId], references: [id])
-  folders Folder[]
-  pages   Page[]
+  account     Accounts              @relation(fields: [accountId], references: [id])
+  folders     Folder[]
+  pages       Page[]
+  members     WorkspaceMember[]
+  invitations WorkspaceInvitation[]
 
   // Mapping
   @@map("workspaces")
+  @@schema("main")
+}
+
+model WorkspaceMember {
+  id          String        @id @unique @default(ulid())
+  workspaceId String        @db.VarChar(128)
+  accountId   String        @db.VarChar(128)
+  role        WorkspaceRole @default(member)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relation
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  account   Accounts  @relation(fields: [accountId], references: [id])
+
+  // Mapping
+  @@unique([workspaceId, accountId])
+  @@index([workspaceId])
+  @@map("workspace_members")
+  @@schema("main")
+}
+
+model WorkspaceInvitation {
+  id          String           @id @unique @default(ulid())
+  workspaceId String           @db.VarChar(128)
+  email       String           @db.VarChar(255)
+  role        WorkspaceRole    @default(member)
+  token       String           @unique @db.VarChar(128)
+  status      InvitationStatus @default(pending)
+  invitedById String           @db.VarChar(128)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relation
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  invitedBy Accounts  @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  // Mapping
+  @@index([workspaceId])
+  @@index([token])
+  @@map("workspace_invitations")
   @@schema("main")
 }
 
@@ -225,6 +271,24 @@ enum Tier {
   free
   personal
   startup
+
+  // Mapping
+  @@schema("main")
+}
+
+enum WorkspaceRole {
+  owner
+  member
+  viewer
+
+  // Mapping
+  @@schema("main")
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  expired
 
   // Mapping
   @@schema("main")

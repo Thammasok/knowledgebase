@@ -2,6 +2,7 @@
 
 import { notFound, useParams } from 'next/navigation'
 import { useState } from 'react'
+import { MembersSection } from '@/components/settings/members-section'
 import {
   CheckIcon,
   ChevronRightIcon,
@@ -33,6 +34,10 @@ import { useAccountProfileHook } from '@/components/settings/use-account-profile
 // ─── Section metadata ─────────────────────────────────────────────────────────
 
 const SECTION_META: Record<string, { title: string; description: string }> = {
+  members: {
+    title: 'Members',
+    description: 'Invite team members and manage their roles in this workspace',
+  },
   profile: {
     title: 'Profile',
     description: 'Manage your name and public information',
@@ -810,6 +815,8 @@ function BillingSection() {
 
 function SectionContent({ slug }: { slug: string }) {
   switch (slug) {
+    case 'members':
+      return <MembersSection />
     case 'profile':
       return <ProfileSection />
     case 'appearance':

@@ -8,6 +8,7 @@ const appConfig = {
   ALLOWED_ORIGIN: {
     CLIENT_URL: process.env.ALLOWED_ORIGIN_CLIENT_URL || '',
   },
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
   EXTERNAL_API: {
     IP_API_URL: process.env.IP_API_URL || 'https://freeipapi.com/api/json',
   },

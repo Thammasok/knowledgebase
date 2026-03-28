@@ -32,11 +32,10 @@ export interface IGetFolders {
   accountId: string
 }
 
-export const getFoldersByWorkspaceId = async ({ workspaceId, accountId }: IGetFolders) => {
+export const getFoldersByWorkspaceId = async ({ workspaceId, accountId: _accountId }: IGetFolders) => {
   return await db.folder.findMany({
     where: {
       workspaceId,
-      workspace: { accountId },
       isRemove: false,
     },
     select: folderSelect,
@@ -81,12 +80,11 @@ export const createFolder = async ({ workspaceId, accountId, name, parentId, ord
   })
 }
 
-export const updateFolder = async ({ id, workspaceId, accountId, name, order }: IUpdateFolder) => {
+export const updateFolder = async ({ id, workspaceId, accountId: _accountId, name, order }: IUpdateFolder) => {
   return await db.folder.update({
     where: {
       id,
       workspaceId,
-      workspace: { accountId },
       isRemove: false,
     },
     data: {
@@ -100,7 +98,7 @@ export const updateFolder = async ({ id, workspaceId, accountId, name, order }: 
 export const deleteFolder = async ({
   id,
   workspaceId,
-  accountId,
+  accountId: _accountId,
 }: {
   id: string
   workspaceId: string
@@ -134,7 +132,7 @@ export const deleteFolder = async ({
 
     // Soft-delete the folder itself
     await tx.folder.update({
-      where: { id, workspaceId, workspace: { accountId }, isRemove: false },
+      where: { id, workspaceId, isRemove: false },
       data: { isRemove: true },
     })
   })

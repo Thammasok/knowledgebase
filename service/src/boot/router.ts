@@ -29,23 +29,27 @@ function generateRoute(app: Application) {
 
         logger.info(`[${method.toLocaleUpperCase()}]: ${apiPath}`)
 
-        // Authentication
-        if (auth) {
-          if (useRefreshToken) {
-            middleware.unshift(authMiddleware.authRefreshMiddleware)
-          } else {
-            middleware.unshift(authMiddleware.authAccessMiddleware)
-          }
-        }
+        // Build middleware chain: validator → auth → custom middleware → handler
+        // Custom middleware runs AFTER auth so req.account is available.
 
-        // Middleware
-        if (_middleware.length > 0) {
-          middleware.unshift(..._middleware)
-        }
-
-        // Validator
+        // Validator (outermost)
         if (validate) {
           middleware.unshift(validator(validate))
+        }
+
+        // Custom middleware inserted between auth and handler
+        if (_middleware.length > 0) {
+          middleware.splice(validate ? 1 : 0, 0, ..._middleware)
+        }
+
+        // Authentication (runs before handler and custom middleware)
+        if (auth) {
+          const authPos = validate ? 1 : 0
+          if (useRefreshToken) {
+            middleware.splice(authPos, 0, authMiddleware.authRefreshMiddleware)
+          } else {
+            middleware.splice(authPos, 0, authMiddleware.authAccessMiddleware)
+          }
         }
 
         // Methods

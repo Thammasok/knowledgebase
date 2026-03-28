@@ -9,6 +9,7 @@ import {
   PaletteIcon,
   ShieldIcon,
   UserIcon,
+  UsersIcon,
   ZapIcon,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -40,6 +41,10 @@ const NAV_GROUPS: { title?: string; items: NavItem[] }[] = [
   {
     title: 'Billing',
     items: [{ id: 'billing', label: 'Billing & Plans', icon: CreditCardIcon }],
+  },
+  {
+    title: 'Workspace',
+    items: [{ id: 'members', label: 'Members', icon: UsersIcon }],
   },
   {
     title: 'Advanced',
