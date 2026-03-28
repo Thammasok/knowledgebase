@@ -1,0 +1,855 @@
+openapi: 3.0.3
+info:
+  title: Knowledgebase GPT — Content API
+  description: |
+    Endpoints for content organization (folders, pages, versions),
+    diary entries, file uploads, links, and semantic search.
+
+    **Scenarios:** SC-ORG-*, SC-DIARY-*, SC-FILE-*, SC-LINK-*, SC-VERSION-*, SC-SEARCH-*
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3030/api/v1
+    description: Local development
+
+tags:
+  - name: Folders
+  - name: Pages
+  - name: Versions
+  - name: Diary
+  - name: Files
+  - name: Links
+  - name: Search
+
+paths:
+  /workspaces/{workspaceId}/folders:
+    post:
+      tags: [Folders]
+      summary: Create a folder
+      description: |
+        Max nesting depth: 3 levels (workspace → folder → sub-folder).
+        **SC:** SC-ORG-001, SC-ORG-002 | **TC:** TC-ORG-001, TC-ORG-003
+      operationId: createFolder
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFolderRequest'
+      responses:
+        '201':
+          description: Folder created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FolderResponse'
+        '400':
+          description: Validation error or max nesting depth
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                tooDeep:
+                  value:
+                    code: MAX_NESTING_DEPTH
+                    message: Maximum folder nesting depth of 3 levels reached.
+                nameTooShort:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: Folder name is required.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workspaces/{workspaceId}/pages:
+    post:
+      tags: [Pages]
+      summary: Create a page
+      description: |
+        Max sub-page depth: 5 levels.
+        Free tier: blocked when workspace.block_count = 1,000.
+        **SC:** SC-ORG-001, SC-ORG-003, SC-ORG-005 | **TC:** TC-ORG-002, TC-ORG-004, TC-ORG-005, TC-ORG-006
+      operationId: createPage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePageRequest'
+      responses:
+        '201':
+          description: Page created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSummary'
+        '400':
+          description: Validation error or max nesting depth
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden or block limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                blockLimit:
+                  value:
+                    code: BLOCK_LIMIT_REACHED
+                    message: Your workspace has reached the 1,000 block limit. Upgrade to Personal for unlimited blocks.
+                viewerForbidden:
+                  value:
+                    code: FORBIDDEN
+                    message: Viewers cannot create content.
+
+  /workspaces/{workspaceId}/pages/{pageId}:
+    get:
+      tags: [Pages]
+      summary: Get page content
+      operationId: getPage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/PageId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Page found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageDetail'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Pages]
+      summary: Update page content (auto-save)
+      description: |
+        Called by the 2-second debounce auto-save on the frontend.
+        Creates a version snapshot for Personal/Startup tiers.
+        **SC:** SC-ORG-004 | **TC:** TC-ORG-005
+      operationId: updatePage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/PageId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePageRequest'
+      responses:
+        '200':
+          description: Page updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pageId:
+                    type: string
+                    format: uuid
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workspaces/{workspaceId}/pages/{pageId}/blocks:
+    post:
+      tags: [Pages]
+      summary: Add a block to a page
+      description: |
+        Increments workspace block counter. Enforces Free tier 1,000 block quota.
+        **SC:** SC-ORG-005, SC-WS-003 | **TC:** TC-ORG-006, TC-WS-007, TC-WS-008
+      operationId: addBlock
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/PageId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [block]
+              properties:
+                block:
+                  type: object
+                  description: Editor.js block object
+                  properties:
+                    type:
+                      type: string
+                      example: paragraph
+                    data:
+                      type: object
+      responses:
+        '201':
+          description: Block added
+        '403':
+          description: Block limit reached or no write access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: BLOCK_LIMIT_REACHED
+                message: Workspace block limit reached.
+
+  /workspaces/{workspaceId}/pages/{pageId}/versions:
+    get:
+      tags: [Versions]
+      summary: List page version history
+      description: |
+        Returns versions newest-first. Personal/Startup only.
+        **SC:** SC-VERSION-001, SC-VERSION-002 | **TC:** TC-VERSION-001, TC-VERSION-003
+      operationId: listPageVersions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/PageId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Version list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PageVersionSummary'
+        '403':
+          description: Plan required or no access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PLAN_REQUIRED
+                message: Version history requires the Personal or Startup plan.
+
+  /workspaces/{workspaceId}/pages/{pageId}/versions/{versionId}/restore:
+    post:
+      tags: [Versions]
+      summary: Restore a page version
+      description: |
+        Replaces page content with selected version. Creates a new snapshot.
+        **SC:** SC-VERSION-001 | **TC:** TC-VERSION-002
+      operationId: restorePageVersion
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/PageId'
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Version restored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pageId:
+                    type: string
+                    format: uuid
+                  restoredVersionId:
+                    type: string
+                    format: uuid
+                  newVersionId:
+                    type: string
+                    format: uuid
+
+  /workspaces/{workspaceId}/diary:
+    post:
+      tags: [Diary]
+      summary: Create a diary entry
+      description: |
+        One entry per (user, workspace, date). Personal/Startup only.
+        If entry exists for date, redirects to existing entry.
+        **SC:** SC-DIARY-001, SC-DIARY-002, SC-DIARY-003 | **TC:** TC-DIARY-001, TC-DIARY-003, TC-DIARY-004
+      operationId: createDiaryEntry
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiaryEntryRequest'
+      responses:
+        '201':
+          description: Diary entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntryResponse'
+        '302':
+          description: Entry already exists for date — redirect to existing
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of existing entry
+        '403':
+          description: Plan required or Viewer role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PLAN_REQUIRED
+                message: Diary requires the Personal or Startup plan.
+
+  /workspaces/{workspaceId}/diary/{date}:
+    get:
+      tags: [Diary]
+      summary: Get diary entry by date
+      description: |
+        Returns entry for given date. Only owner can read their own entries.
+        **SC:** SC-DIARY-001, SC-DIARY-004 | **TC:** TC-DIARY-002, TC-DIARY-005
+      operationId: getDiaryEntry
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+          description: ISO date string (YYYY-MM-DD)
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Entry found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiaryEntryResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Diary]
+      summary: Update diary entry (auto-save)
+      operationId: updateDiaryEntry
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: object
+                  description: Editor.js content JSON
+      responses:
+        '200':
+          description: Entry updated
+
+  /workspaces/{workspaceId}/files:
+    post:
+      tags: [Files]
+      summary: Upload a file
+      description: |
+        Free tier: max 5MB. Personal/Startup: max 100MB.
+        Supported types: pdf, md, doc, docx, xls, xlsx, png, jpg, jpeg, webp, gif.
+        **SC:** SC-FILE-001, SC-FILE-002, SC-FILE-003 | **TC:** TC-FILE-001 → TC-FILE-007
+      operationId: uploadFile
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                pageId:
+                  type: string
+                  format: uuid
+                  description: Optional — attach to specific page
+      responses:
+        '200':
+          description: Upload accepted; processing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileResponse'
+        '400':
+          description: Unsupported type or file too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unsupportedType:
+                  value:
+                    code: UNSUPPORTED_FILE_TYPE
+                    message: File type not supported.
+                    supportedTypes: [pdf, md, doc, docx, xls, xlsx, png, jpg, jpeg, webp, gif]
+                tooLarge:
+                  value:
+                    code: FILE_TOO_LARGE
+                    message: File exceeds the 5MB limit for the Free plan.
+                    maxBytes: 5242880
+
+  /workspaces/{workspaceId}/links:
+    post:
+      tags: [Links]
+      summary: Save a URL
+      description: |
+        Free tier: bookmark only (no crawl).
+        Personal/Startup: crawl + RAG index.
+        **SC:** SC-LINK-001, SC-LINK-003 | **TC:** TC-LINK-001, TC-LINK-003
+      operationId: saveLink
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Valid http or https URL
+      responses:
+        '201':
+          description: Link saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkResponse'
+        '400':
+          description: Invalid URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_URL
+                message: URL must be a valid http or https address.
+
+  /workspaces/{workspaceId}/links/{linkId}/fetch:
+    post:
+      tags: [Links]
+      summary: Trigger manual re-crawl
+      description: |
+        Personal/Startup only. Rate limited to once per hour per link.
+        **SC:** SC-LINK-002, SC-LINK-005 | **TC:** TC-LINK-002, TC-LINK-006
+      operationId: refetchLink
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Crawl enqueued
+        '403':
+          description: Plan required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PLAN_REQUIRED
+                message: Content fetch requires the Personal or Startup plan.
+        '429':
+          description: Recrawl too soon
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: RECRAWL_TOO_SOON
+                message: This link was crawled less than 1 hour ago.
+
+  /workspaces/{workspaceId}/search:
+    get:
+      tags: [Search]
+      summary: Semantic search
+      description: |
+        Returns up to 20 results ordered by vector similarity.
+        Free tier: notes + files only. Personal/Startup: all content types.
+        **SC:** SC-SEARCH-001, SC-SEARCH-002 | **TC:** TC-SEARCH-001, TC-SEARCH-002, TC-SEARCH-003
+      operationId: semanticSearch
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query text
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+            default: 20
+        - name: folderId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Optional — scope results to folder
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Missing query parameter
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    DeviceId:
+      name: x-device-id
+      in: header
+      required: true
+      schema:
+        type: string
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PageId:
+      name: pageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    CreateFolderRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parentFolderId:
+          type: string
+          format: uuid
+          nullable: true
+
+    FolderResponse:
+      type: object
+      properties:
+        folderId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        parentFolderId:
+          type: string
+          format: uuid
+          nullable: true
+        depth:
+          type: integer
+
+    CreatePageRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        folderId:
+          type: string
+          format: uuid
+          nullable: true
+        parentPageId:
+          type: string
+          format: uuid
+          nullable: true
+
+    PageSummary:
+      type: object
+      properties:
+        pageId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        folderId:
+          type: string
+          format: uuid
+          nullable: true
+        parentPageId:
+          type: string
+          format: uuid
+          nullable: true
+        depth:
+          type: integer
+
+    PageDetail:
+      allOf:
+        - $ref: '#/components/schemas/PageSummary'
+        - type: object
+          properties:
+            content:
+              type: object
+              description: Editor.js JSON content
+            blockCount:
+              type: integer
+            updatedAt:
+              type: string
+              format: date-time
+            createdBy:
+              type: string
+              format: uuid
+
+    UpdatePageRequest:
+      type: object
+      required: [title, content, blockCount]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          type: object
+        blockCount:
+          type: integer
+          minimum: 0
+
+    PageVersionSummary:
+      type: object
+      properties:
+        versionId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        authorName:
+          type: string
+        blockCount:
+          type: integer
+
+    CreateDiaryEntryRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+          description: YYYY-MM-DD — defaults to today
+        content:
+          type: object
+          description: Editor.js block content
+
+    DiaryEntryResponse:
+      type: object
+      properties:
+        entryId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        userId:
+          type: string
+          format: uuid
+        content:
+          type: object
+        updatedAt:
+          type: string
+          format: date-time
+
+    FileResponse:
+      type: object
+      properties:
+        fileId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        sizeBytes:
+          type: integer
+        mimeType:
+          type: string
+        status:
+          type: string
+          enum: [uploading, processing, indexed, stored, failed]
+
+    LinkResponse:
+      type: object
+      properties:
+        linkId:
+          type: string
+          format: uuid
+        url:
+          type: string
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [saved, crawled, crawl_failed, indexed]
+        savedAt:
+          type: string
+          format: date-time
+        lastCrawledAt:
+          type: string
+          format: date-time
+          nullable: true
+        contentFetch:
+          type: boolean
+          description: Whether content crawling is enabled (false on Free tier)
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              contentType:
+                type: string
+                enum: [note, file, link, diary]
+              title:
+                type: string
+              excerpt:
+                type: string
+              sourceUrl:
+                type: string
+              score:
+                type: number
+                format: float
+        total:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  code:
+                    type: string
+                  message:
+                    type: string

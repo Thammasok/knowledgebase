@@ -1,0 +1,529 @@
+openapi: 3.0.3
+info:
+  title: Knowledgebase GPT — AI API
+  description: |
+    AI chat (RAG), BYOK model configuration, and in-editor generation.
+
+    **Scenarios:** SC-AI-001 → SC-AI-007
+    **Test Cases:** TC-AI-001 → TC-AI-012
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3030/api/v1
+    description: Local development
+
+tags:
+  - name: AI Chat
+  - name: AI Settings
+  - name: AI Editor
+
+paths:
+  /workspaces/{workspaceId}/ai/chat:
+    post:
+      tags: [AI Chat]
+      summary: Send a chat message with RAG
+      description: |
+        Retrieves relevant chunks from indexed content and sends to configured model.
+
+        **Tier scoping:**
+        - Free: notes + files only (built-in platform model)
+        - Personal: all content types including diary + crawled links (BYOK)
+        - Startup: all team content (excluding private diary) (BYOK)
+
+        **Viewer role:** blocked — returns 403.
+
+        **SC:** SC-AI-001, SC-AI-004, SC-AI-005
+        **TC:** TC-AI-001, TC-AI-007, TC-AI-008, TC-AI-009
+      operationId: sendChatMessage
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              newConversation:
+                summary: Start new conversation
+                value:
+                  message: Summarize my notes on project alpha
+                  conversationId: null
+                  folderId: null
+              continueConversation:
+                summary: Continue existing conversation
+                value:
+                  message: What were the key risks mentioned?
+                  conversationId: 550e8400-e29b-41d4-a716-446655440000
+                  folderId: null
+              folderScoped:
+                summary: Scoped to a specific folder
+                value:
+                  message: What do we know about authentication?
+                  conversationId: null
+                  folderId: a3bb189e-8bf9-3888-9912-ace4e6543002
+      responses:
+        '200':
+          description: AI response with sources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '403':
+          description: Viewer role or plan restriction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                viewerBlocked:
+                  value:
+                    code: FORBIDDEN
+                    message: Viewers cannot use AI features.
+                planRequired:
+                  value:
+                    code: PLAN_REQUIRED
+                    message: This AI feature requires the Personal or Startup plan.
+
+  /workspaces/{workspaceId}/ai/conversations:
+    get:
+      tags: [AI Chat]
+      summary: List user's conversations
+      operationId: listConversations
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Conversation list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConversationSummary'
+
+  /workspaces/{workspaceId}/ai/conversations/{conversationId}:
+    get:
+      tags: [AI Chat]
+      summary: Get full conversation history
+      description: |
+        Returns all messages. Only accessible by the conversation owner.
+        **SC:** SC-AI-001 | **TC:** TC-AI-002
+      operationId: getConversation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/ConversationId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Full conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetail'
+        '403':
+          description: Not owner of this conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /workspaces/{workspaceId}/ai/settings:
+    get:
+      tags: [AI Settings]
+      summary: Get AI model configurations (keys masked)
+      description: |
+        Returns all configured AI providers. Raw API keys are NEVER returned.
+        `apiKey` field is always masked as `"sk-****"` or similar.
+
+        **SC:** SC-AI-003 | **TC:** TC-AI-006
+      operationId: getAiSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: AI settings (keys masked)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSettingsResponse'
+              example:
+                configs:
+                  - configId: 550e8400-e29b-41d4-a716-446655440000
+                    provider: openai
+                    apiKey: sk-****
+                    modelName: gpt-4o
+                    isActive: true
+
+    post:
+      tags: [AI Settings]
+      summary: Save BYOK AI model configuration
+      description: |
+        Validates API key with a live test call before saving.
+        Key is encrypted (AES-256) before persisting — never returned raw.
+
+        Personal tier: one active config.
+        Startup tier: multiple configs; per-conversation model selection.
+
+        **SC:** SC-AI-002 | **TC:** TC-AI-003, TC-AI-004, TC-AI-005
+      operationId: saveAiSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAiSettingsRequest'
+            examples:
+              openai:
+                summary: OpenAI BYOK
+                value:
+                  provider: openai
+                  apiKey: sk-your-openai-key
+                  modelName: gpt-4o
+              ollama:
+                summary: Local Ollama
+                value:
+                  provider: ollama
+                  baseUrl: http://localhost:11434
+                  modelName: llama2
+              invalid:
+                summary: Invalid key (will fail validation)
+                value:
+                  provider: openai
+                  apiKey: sk-invalid-key
+      responses:
+        '200':
+          description: Config saved and validated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  configId:
+                    type: string
+                    format: uuid
+                  provider:
+                    type: string
+                  status:
+                    type: string
+                    enum: [active]
+        '400':
+          description: Validation failed or key rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                keyFailed:
+                  value:
+                    code: KEY_VALIDATION_FAILED
+                    message: API key validation failed. Please check your key and try again.
+                missingField:
+                  value:
+                    code: VALIDATION_ERROR
+                    message: apiKey is required for OpenAI provider.
+        '403':
+          description: Plan required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PLAN_REQUIRED
+                message: BYOK AI configuration requires the Personal or Startup plan.
+
+  /workspaces/{workspaceId}/ai/editor/generate:
+    post:
+      tags: [AI Editor]
+      summary: Generate content in the editor
+      description: |
+        AI generates an Editor.js block from a prompt.
+        Uses user's configured BYOK model.
+        Max input context: 8,000 tokens.
+        Personal/Startup only.
+
+        **SC:** SC-AI-006, SC-AI-007 | **TC:** TC-AI-010, TC-AI-012
+      operationId: generateEditorContent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditorGenerateRequest'
+            examples:
+              generate:
+                summary: Generate new content
+                value:
+                  prompt: Write an introduction to microservices architecture
+                  pageId: 550e8400-e29b-41d4-a716-446655440000
+                  selectionContext: null
+              editSelection:
+                summary: Edit selected text
+                value:
+                  prompt: Make this more concise
+                  pageId: 550e8400-e29b-41d4-a716-446655440000
+                  selectionContext: The quick brown fox jumps over the lazy dog in the meadow near the river.
+      responses:
+        '200':
+          description: Generated block
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorGenerateResponse'
+        '400':
+          description: Context too long
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: CONTEXT_TOO_LONG
+                message: Input context exceeds the 8,000 token limit.
+        '403':
+          description: Plan required or Viewer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PLAN_REQUIRED
+                message: In-editor AI requires the Personal or Startup plan.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    DeviceId:
+      name: x-device-id
+      in: header
+      required: true
+      schema:
+        type: string
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConversationId:
+      name: conversationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          description: User's question or prompt
+        conversationId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Continue existing conversation; null to start new
+        folderId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Scope RAG retrieval to this folder
+
+    ChatResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: AI-generated response
+        conversationId:
+          type: string
+          format: uuid
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceReference'
+
+    SourceReference:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [note, file, link, diary]
+        title:
+          type: string
+        url:
+          type: string
+          description: Deep link to the source content
+
+    ConversationSummary:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    ConversationDetail:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              messageId:
+                type: string
+                format: uuid
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+              sources:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceReference'
+              createdAt:
+                type: string
+                format: date-time
+
+    AiSettingsResponse:
+      type: object
+      properties:
+        configs:
+          type: array
+          items:
+            type: object
+            properties:
+              configId:
+                type: string
+                format: uuid
+              provider:
+                type: string
+                enum: [openai, gemini, anthropic, ollama, platform]
+              apiKey:
+                type: string
+                description: Always masked — raw key never returned
+                example: sk-****
+              baseUrl:
+                type: string
+                nullable: true
+                description: For Ollama only
+              modelName:
+                type: string
+                nullable: true
+              isActive:
+                type: boolean
+
+    SaveAiSettingsRequest:
+      type: object
+      required: [provider]
+      properties:
+        provider:
+          type: string
+          enum: [openai, gemini, anthropic, ollama]
+        apiKey:
+          type: string
+          nullable: true
+          description: Required for openai, gemini, anthropic. Not used for ollama.
+        baseUrl:
+          type: string
+          nullable: true
+          description: Required for ollama (e.g. http://localhost:11434)
+        modelName:
+          type: string
+          nullable: true
+          description: Optional model override
+
+    EditorGenerateRequest:
+      type: object
+      required: [prompt, pageId]
+      properties:
+        prompt:
+          type: string
+          description: Generation or editing instruction
+        pageId:
+          type: string
+          format: uuid
+        selectionContext:
+          type: string
+          nullable: true
+          description: Selected text to edit/improve; null for fresh generation
+
+    EditorGenerateResponse:
+      type: object
+      properties:
+        block:
+          type: object
+          description: Editor.js block object
+          properties:
+            type:
+              type: string
+              example: paragraph
+            data:
+              type: object
+              properties:
+                text:
+                  type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string

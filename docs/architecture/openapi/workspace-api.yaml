@@ -1,0 +1,418 @@
+openapi: 3.0.3
+info:
+  title: Knowledgebase GPT — Workspace & Collaboration API
+  description: |
+    Workspace creation, member management, and invitation flows.
+
+    **Scenarios:** SC-WS-001 → SC-WS-005, SC-COLLAB-001 → SC-COLLAB-006
+    **Test Cases:** TC-WS-001 → TC-WS-011, TC-COLLAB-001 → TC-COLLAB-009
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3030/api/v1
+    description: Local development
+
+tags:
+  - name: Workspaces
+    description: Workspace management
+  - name: Collaboration
+    description: Member invitations and role management
+
+paths:
+  /workspaces:
+    post:
+      tags: [Workspaces]
+      summary: Create a new workspace
+      description: |
+        Creates a personal (Free/Personal) or shared (Startup) workspace.
+        Caller is set as Owner. Slug is auto-generated from name.
+
+        **SC:** SC-WS-001, SC-WS-002, SC-WS-004 | **TC:** TC-WS-001 → TC-WS-006, TC-WS-009
+      operationId: createWorkspace
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+            examples:
+              personal:
+                summary: Personal workspace (Free/Personal tier)
+                value:
+                  name: My Knowledge Base
+              startup:
+                summary: Shared workspace (Startup tier)
+                value:
+                  name: Engineering Team Wiki
+              nameTooShort:
+                summary: Name below minimum (1 char — invalid)
+                value:
+                  name: A
+              nameMaxLength:
+                summary: Name at max boundary (100 chars)
+                value:
+                  name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceResponse'
+        '400':
+          description: Validation error (name out of range)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /workspaces/{workspaceId}:
+    get:
+      tags: [Workspaces]
+      summary: Get workspace details
+      operationId: getWorkspace
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Workspace found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /workspaces/{workspaceId}/invite:
+    post:
+      tags: [Collaboration]
+      summary: Invite a user to the workspace
+      description: |
+        Sends an invitation email. Only Owner on Startup tier can invite.
+        Invitation link expires after 7 days.
+
+        **SC:** SC-COLLAB-001, SC-COLLAB-002, SC-WS-005
+        **TC:** TC-COLLAB-001, TC-COLLAB-003, TC-WS-010, TC-WS-011
+      operationId: inviteWorkspaceMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteMemberRequest'
+      responses:
+        '200':
+          description: Invitation sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invitationId:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '403':
+          description: Plan required or not Owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                planRequired:
+                  value:
+                    code: PLAN_REQUIRED
+                    message: Inviting members requires the Startup plan.
+                notOwner:
+                  value:
+                    code: FORBIDDEN
+                    message: Only workspace Owners can invite members.
+        '409':
+          description: Pending invite already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PENDING_INVITE_EXISTS
+                message: A pending invitation already exists for this email address.
+
+  /invitations/{token}/accept:
+    post:
+      tags: [Collaboration]
+      summary: Accept a workspace invitation
+      description: |
+        Invitee accepts invite via token from email link.
+        **SC:** SC-COLLAB-001, SC-COLLAB-003 | **TC:** TC-COLLAB-002, TC-COLLAB-004
+      operationId: acceptInvitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Invitation token from email link
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Successfully joined workspace
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workspaceId:
+                    type: string
+                    format: uuid
+                  role:
+                    type: string
+                    enum: [member, viewer]
+        '404':
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: NOT_FOUND
+                message: Invitation not found.
+        '409':
+          description: Already a member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '410':
+          description: Invitation expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVITE_EXPIRED
+                message: This invitation has expired. Please ask the owner to resend.
+
+  /workspaces/{workspaceId}/members/{userId}:
+    patch:
+      tags: [Collaboration]
+      summary: Update member role
+      description: |
+        Owner changes a member's role. Takes effect immediately.
+        **SC:** SC-COLLAB-004 | **TC:** TC-COLLAB-005, TC-COLLAB-006
+      operationId: updateMemberRole
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [member, viewer]
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    format: uuid
+                  role:
+                    type: string
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Collaboration]
+      summary: Remove member from workspace
+      description: |
+        Owner removes a member. Takes effect immediately.
+        Owner cannot remove themselves.
+        **SC:** SC-COLLAB-004, SC-COLLAB-006 | **TC:** TC-COLLAB-006, TC-COLLAB-009
+      operationId: removeWorkspaceMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Member removed
+        '400':
+          description: Owner cannot remove themselves
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: OWNER_CANNOT_REMOVE_SELF
+                message: You cannot remove yourself as Owner. Transfer ownership first.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    DeviceId:
+      name: x-device-id
+      in: header
+      required: true
+      schema:
+        type: string
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: FORBIDDEN
+            message: You do not have permission to perform this action.
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_FOUND
+            message: Resource not found.
+
+  schemas:
+    CreateWorkspaceRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          description: Workspace display name (2–100 chars)
+          example: My Engineering Workspace
+
+    WorkspaceResponse:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+          description: URL-safe unique slug auto-generated from name
+        type:
+          type: string
+          enum: [personal, shared]
+        ownerId:
+          type: string
+          format: uuid
+        blockCount:
+          type: integer
+          description: Current total block count (relevant for Free tier quota)
+        createdAt:
+          type: string
+          format: date-time
+
+    InviteMemberRequest:
+      type: object
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [member, viewer]
+
+    ValidationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              code:
+                type: string
+              message:
+                type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
