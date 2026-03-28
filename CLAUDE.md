@@ -4,7 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Knowledgebase GPT — an AI assistant platform with Express backend (service/), Next.js frontend (web/), and Qdrant vector database for semantic search.
+Knowledgebase GPT — an AI-powered note-taking platform (similar to Notion) with Express backend (service/), Next.js frontend (web/), and Qdrant vector database for semantic search and RAG.
+
+### Product
+
+A SaaS knowledge management platform where users capture notes/documents, files, links, and diary entries, then query their knowledge base via AI-powered RAG chat and in-editor AI assistance.
+
+**Three-tier pricing:**
+
+| Tier | Key limits |
+|------|-----------|
+| **Free** | 1,000 blocks, notes + links (bookmark only) + files (5MB), 1 built-in AI model, basic RAG |
+| **Personal** | Unlimited blocks, all content types, files (100MB), diary, BYOK AI, full RAG, version history |
+| **Startup** | All Personal features + shared workspace, team collaboration, multi-model AI, permission control |
+
+**Content types:** Notes/Documents (Editor.js blocks), Files (PDF/MD/DOCX/XLSX/images), Links (bookmark or content-fetch+RAG), Diary (private, date-anchored)
+
+**AI/RAG:** Free gets 1 platform-managed model; Personal/Startup use BYOK (OpenAI, Gemini, Anthropic, Ollama). Semantic search available on all tiers.
+
+**Organization:** Workspace → Folder → Page (with sub-pages)
+
+**Roles (Startup only):** Owner / Member / Viewer
+
+See `docs/requirements/REQ-PLATFORM-001.md` for full requirements.
 
 ## Development Commands
 
