@@ -8,6 +8,7 @@ import { authApiPath } from '@/configs/service.config'
 import { useAutoSave } from '@/hooks/use-auto-save.hook'
 import useWorkspaceContentStore from '@/stores/workspace-content.store'
 import type { EditorBlock } from '@/components/editor/editor'
+import { VersionHistoryPanel } from '@/components/content/version-history-panel'
 
 // Load Editor.js only on the client (no SSR — uses DOM APIs)
 const Editor = dynamic(
@@ -42,11 +43,17 @@ function SaveStatusIndicator({ status }: { status: 'idle' | 'saving' | 'saved' |
 
 export function PageEditor({ page }: PageEditorProps) {
   const [blocks, setBlocks] = useState<EditorBlock[]>(page.content ?? [])
+  const [editorKey, setEditorKey] = useState(0)
   const [title, setTitle] = useState(page.title)
   const [titleSaving, setTitleSaving] = useState(false)
   const [blockLimitError, setBlockLimitError] = useState(false)
 
   const updatePageTitleInStore = useWorkspaceContentStore((s) => s.updatePageTitle)
+
+  const handleRestore = useCallback((restoredBlocks: unknown[]) => {
+    setBlocks(restoredBlocks as EditorBlock[])
+    setEditorKey((k) => k + 1) // remount editor with restored content
+  }, [])
 
   const saveContent = useCallback(
     async (currentBlocks: EditorBlock[]) => {
@@ -100,6 +107,11 @@ export function PageEditor({ page }: PageEditorProps) {
         <div className="flex items-center gap-2 ml-4">
           {titleSaving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           <SaveStatusIndicator status={status} />
+          <VersionHistoryPanel
+            workspaceId={page.workspaceId}
+            pageId={page.id}
+            onRestore={handleRestore}
+          />
         </div>
       </div>
 
@@ -113,7 +125,8 @@ export function PageEditor({ page }: PageEditorProps) {
       {/* Editor */}
       <div className="flex-1 overflow-y-auto px-8 pb-16">
         <Editor
-          initialBlocks={page.content}
+          key={editorKey}
+          initialBlocks={blocks}
           onChange={setBlocks}
           placeholder="Start writing…"
         />

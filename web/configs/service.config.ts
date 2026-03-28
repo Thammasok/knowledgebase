@@ -57,6 +57,10 @@ export const authApiPath = {
       `/api/v1/workspace/${workspaceId}/page/${pageId}/content`,
     deletePage: (workspaceId: string, pageId: string) =>
       `/api/v1/workspace/${workspaceId}/page/${pageId}`,
+    getPageVersions: (workspaceId: string, pageId: string) =>
+      `/api/v1/workspace/${workspaceId}/page/${pageId}/versions`,
+    restorePageVersion: (workspaceId: string, pageId: string, versionId: string) =>
+      `/api/v1/workspace/${workspaceId}/page/${pageId}/versions/${versionId}/restore`,
   },
   customer: {
     createCustomer: '/api/v1/customer',

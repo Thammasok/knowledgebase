@@ -46,6 +46,7 @@ model Accounts {
   authSessions          AuthSession[]
   accountSetting        AccountSetting?
   workspaces            Workspace[]
+  pageVersions          PageVersion[]
 
   // Mapping
   @@map("accounts")
@@ -181,15 +182,33 @@ model Page {
   updatedAt    DateTime @updatedAt
 
   // Relation
-  workspace  Workspace @relation(fields: [workspaceId], references: [id])
-  folder     Folder?   @relation(fields: [folderId], references: [id])
-  parent     Page?     @relation("PageChildren", fields: [parentPageId], references: [id])
-  children   Page[]    @relation("PageChildren")
+  workspace  Workspace     @relation(fields: [workspaceId], references: [id])
+  folder     Folder?       @relation(fields: [folderId], references: [id])
+  parent     Page?         @relation("PageChildren", fields: [parentPageId], references: [id])
+  children   Page[]        @relation("PageChildren")
+  versions   PageVersion[]
 
   // Mapping
   @@index([workspaceId, folderId])
   @@index([workspaceId, parentPageId])
   @@map("pages")
+  @@schema("main")
+}
+
+model PageVersion {
+  id        String   @id @unique @default(ulid())
+  pageId    String   @db.VarChar(128)
+  accountId String   @db.VarChar(128)
+  content   Json
+  createdAt DateTime @default(now())
+
+  // Relation
+  page    Page     @relation(fields: [pageId], references: [id])
+  account Accounts @relation(fields: [accountId], references: [id])
+
+  // Mapping
+  @@index([pageId])
+  @@map("page_versions")
   @@schema("main")
 }
 

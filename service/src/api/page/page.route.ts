@@ -1,6 +1,8 @@
 import { RouteTypes } from '../../types/routes'
 import { createPageSchema, updatePageSchema, updatePageContentSchema } from './page.validate'
 import * as PageController from './page.controller'
+import * as PageVersionController from './version/page-version.controller'
+import { tierGuard } from '../../middleware/tier-guard.middleware'
 
 const pageRouters: RouteTypes = {
   version: '1',
@@ -44,6 +46,20 @@ const pageRouters: RouteTypes = {
       method: 'delete',
       auth: true,
       handler: PageController.deletePage,
+    },
+    {
+      route: '/:workspaceId/page/:pageId/versions',
+      method: 'get',
+      auth: true,
+      middleware: [tierGuard('personal')],
+      handler: PageVersionController.getVersions,
+    },
+    {
+      route: '/:workspaceId/page/:pageId/versions/:versionId/restore',
+      method: 'post',
+      auth: true,
+      middleware: [tierGuard('personal')],
+      handler: PageVersionController.restoreVersion,
     },
   ],
 }

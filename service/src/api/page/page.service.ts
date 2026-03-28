@@ -1,5 +1,6 @@
 import * as PageRepository from './page.repository'
 import { incrementBlockCount } from '../../libs/block-quota/block-quota.service'
+import { createPageVersion } from './version/page-version.repository'
 
 export const getPages = async (params: { workspaceId: string; accountId: string }) => {
   return await PageRepository.getPagesByWorkspaceId(params)
@@ -32,6 +33,16 @@ export const updatePageContent = async (
 
   if (delta > 0) {
     await incrementBlockCount(data.workspaceId, delta, data.tier)
+  }
+
+  // Snapshot the current content before overwriting (for version history)
+  const currentPage = await PageRepository.getPageById({
+    id: data.id,
+    workspaceId: data.workspaceId,
+    accountId: data.accountId,
+  })
+  if (currentPage) {
+    await createPageVersion(data.id, data.accountId, currentPage.content)
   }
 
   return await PageRepository.updatePageContent(data)
