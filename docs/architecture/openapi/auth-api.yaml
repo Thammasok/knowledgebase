@@ -2,12 +2,14 @@ openapi: 3.0.3
 info:
   title: Knowledgebase GPT — Auth API
   description: |
-    Authentication endpoints: registration, email verification, login,
-    Google OAuth, token refresh, and logout.
+    Authentication endpoints: registration, email OTP verification, login,
+    OAuth sign-in, token refresh, logout, and password reset.
+
+    Updated to match actual source implementation (Phase 1).
 
     **Scenarios:** SC-AUTH-001 through SC-AUTH-009
     **Test Cases:** TC-AUTH-001 through TC-AUTH-024
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
   - url: http://localhost:3030/api/v1
@@ -18,25 +20,32 @@ servers:
 tags:
   - name: Auth
     description: Authentication and account management
+  - name: Account
+    description: User profile and settings
+  - name: AuthSession
+    description: Device session management
 
 paths:
-  /auth/register:
+
+  # ── SIGNUP ──────────────────────────────────────────────────────────────
+
+  /auth/signup:
     post:
       tags: [Auth]
-      summary: Register a new user account
+      summary: Register a new account
       description: |
-        Creates a new user account. Dispatches a verification email.
-        New accounts default to the **Free** tier.
+        Creates a new user account with email/password. Account starts unverified.
+        User must verify email via OTP flow before full access.
 
         **SC:** SC-AUTH-001, SC-AUTH-002, SC-AUTH-003
         **TC:** TC-AUTH-001 → TC-AUTH-016
-      operationId: registerUser
+      operationId: signupUser
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              $ref: '#/components/schemas/SignupRequest'
             examples:
               valid:
                 summary: Valid registration
@@ -50,90 +59,187 @@ paths:
                   displayName: AnotherUser
                   email: existing@example.com
                   password: SecurePass1!
-              weakPassword:
-                summary: Password missing special char
-                value:
-                  displayName: JohnDoe
-                  email: newuser@example.com
-                  password: SecurePass1
       responses:
         '201':
-          description: Account created successfully
+          description: Account created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegisterResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: account created
         '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-              example:
-                code: VALIDATION_ERROR
-                message: One or more fields are invalid.
-                errors:
-                  - field: password
-                    code: PASSWORD_MISSING_SPECIAL
-                    message: Password must contain at least one special character.
+          $ref: '#/components/responses/ValidationError'
         '409':
-          description: Email already registered
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                code: EMAIL_ALREADY_EXISTS
-                message: This email address is already registered.
-        '429':
-          $ref: '#/components/responses/RateLimited'
+          $ref: '#/components/responses/Conflict'
 
-  /auth/verify-email:
+  # ── REQUEST ACCESS (WAITLIST) ────────────────────────────────────────────
+
+  /auth/request-access:
     post:
       tags: [Auth]
-      summary: Verify email address
-      operationId: verifyEmail
+      summary: Submit email for invite-gated waitlist
+      operationId: requestAccess
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [token]
+              required: [email]
               properties:
-                token:
+                email:
                   type: string
-                  description: Verification token from email link
+                  format: email
+                  maxLength: 80
       responses:
-        '200':
-          description: Email verified successfully
+        '201':
+          description: Request submitted
+          content:
+            application/json:
+              schema:
+                type: object
         '400':
-          description: Token invalid
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                code: TOKEN_INVALID
-                message: Verification token is invalid.
-        '410':
-          description: Token expired (> 24 hours)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                code: TOKEN_EXPIRED
-                message: Verification token has expired. Please request a new one.
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
-  /auth/resend-verification:
+  /auth/signup/request-access:
     post:
       tags: [Auth]
-      summary: Resend verification email
+      summary: Register via approved invite
+      operationId: signupFromRequestAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId, displayName, password]
+              properties:
+                requestId:
+                  type: string
+                displayName:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 32
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: account created
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── LOGIN ────────────────────────────────────────────────────────────────
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate with email and password
       description: |
-        Rate limited to 3 requests per hour per email address.
-        **SC:** SC-AUTH-009 | **TC:** TC-AUTH-024
-      operationId: resendVerification
+        Returns JWT access + refresh tokens and basic account info.
+        Creates an AuthSession record for the device.
+
+        **TC:** TC-AUTH-017, TC-AUTH-018, TC-AUTH-019
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              valid:
+                summary: Valid credentials
+                value:
+                  email: user@example.com
+                  password: SecurePass1!
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── REFRESH ──────────────────────────────────────────────────────────────
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      description: |
+        Uses the refresh token (in Authorization header) to issue new tokens.
+        Requires `x-device-id` header matching the original session.
+      operationId: refreshToken
+      security:
+        - refreshTokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: New tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── LOGOUT ───────────────────────────────────────────────────────────────
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate current session
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout success
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── OTP EMAIL VERIFICATION ───────────────────────────────────────────────
+
+  /auth/verify/mail:
+    post:
+      tags: [Auth]
+      summary: Send OTP verification email
+      description: |
+        Generates a 6-digit OTP, stores it in Redis with TTL, and sends it to the email.
+        Returns a `ref` code that must be submitted along with the OTP.
+      operationId: sendVerifyOtp
       requestBody:
         required: true
         content:
@@ -147,79 +253,142 @@ paths:
                   format: email
       responses:
         '200':
-          description: Email resent
-        '429':
-          $ref: '#/components/responses/RateLimited'
-
-  /auth/login:
-    post:
-      tags: [Auth]
-      summary: Login with email and password
-      description: |
-        Returns JWT access token (15 min) and refresh token (30 days).
-        Rate limited to 10 failed attempts per IP per minute.
-
-        **SC:** SC-AUTH-004, SC-AUTH-005, SC-AUTH-008
-        **TC:** TC-AUTH-017, TC-AUTH-018, TC-AUTH-019, TC-AUTH-023
-      operationId: loginUser
-      parameters:
-        - $ref: '#/components/parameters/DeviceId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-            examples:
-              valid:
-                value:
-                  email: verified@example.com
-                  password: SecurePass1!
-              wrongPassword:
-                value:
-                  email: verified@example.com
-                  password: WrongPass99!
-      responses:
-        '200':
-          description: Login successful
+          description: OTP sent
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthTokenResponse'
-        '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                code: INVALID_CREDENTIALS
-                message: invalid email or password
-        '429':
-          $ref: '#/components/responses/RateLimited'
+                type: object
+                properties:
+                  mail:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: send email is successed
+                  ref:
+                    type: string
+                    description: Reference code to use when verifying OTP
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
-  /auth/oauth/google:
-    post:
+    patch:
       tags: [Auth]
-      summary: Authenticate with Google OAuth
+      summary: Verify email with OTP
       description: |
-        Creates account on first login (email_verified = true).
-        Logs in existing users.
-        **SC:** SC-AUTH-006 | **TC:** TC-AUTH-020, TC-AUTH-021
-      operationId: googleOAuth
-      parameters:
-        - $ref: '#/components/parameters/DeviceId'
+        Validates `{ email, ref, otp }` against Redis. On success, marks account
+        as `isVerify: true` and deletes OTP from Redis.
+      operationId: verifyEmailOtp
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [idToken]
+              required: [email, ref, otp]
               properties:
-                idToken:
+                email:
                   type: string
-                  description: Google ID token from OAuth callback
+                  format: email
+                ref:
+                  type: string
+                  description: Reference code from send-OTP response
+                otp:
+                  type: string
+                  pattern: '^\d{6}$'
+                  description: 6-digit numeric OTP
+      responses:
+        '200':
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: verify account is successed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  # ── FORGOT / RESET PASSWORD ──────────────────────────────────────────────
+
+  /auth/forgot/mail:
+    post:
+      tags: [Auth]
+      summary: Request password reset email
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: send mail for request change password success
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/password:
+    post:
+      tags: [Auth]
+      summary: Set new password via reset token
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                  description: Reset token from email
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 64
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── OAUTH ────────────────────────────────────────────────────────────────
+
+  /auth/oauth:
+    post:
+      tags: [Auth]
+      summary: Sign in or sign up via OAuth provider
+      description: |
+        Unified OAuth endpoint for Google, GitHub, and Facebook.
+        Creates account if first login; links if email already exists.
+        Called by the Next.js NextAuth JWT callback.
+      operationId: oauthSignin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthRequest'
       responses:
         '200':
           description: Authenticated
@@ -228,82 +397,197 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthTokenResponse'
         '400':
-          description: Invalid or expired Google token
+          $ref: '#/components/responses/ValidationError'
+
+  # ── ACCOUNT ──────────────────────────────────────────────────────────────
+
+  /account/:
+    get:
+      tags: [Account]
+      summary: Get account profile
+      operationId: getProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Account profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                code: INVALID_TOKEN
-                message: Google ID token is invalid or expired.
+                $ref: '#/components/schemas/AccountProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
-  /auth/refresh:
-    post:
-      tags: [Auth]
-      summary: Refresh access token
-      description: |
-        Exchange a valid refresh token for a new access token.
-        **SC:** SC-AUTH-007 | **TC:** TC-AUTH-022
-      operationId: refreshToken
+    patch:
+      tags: [Account]
+      summary: Update account profile
+      operationId: updateProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [refreshToken, deviceId]
               properties:
-                refreshToken:
+                displayName:
                   type: string
-                deviceId:
+                  maxLength: 255
+                firstName:
                   type: string
+                  maxLength: 255
+                lastName:
+                  type: string
+                  maxLength: 255
       responses:
         '200':
-          description: New access token issued
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /account/setting/basic:
+    get:
+      tags: [Account]
+      summary: Get account settings
+      operationId: getSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Account settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      tags: [Account]
+      summary: Update account settings
+      operationId: updateSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, th]
+                theme:
+                  type: string
+                  enum: [light, dark, auto]
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSettings'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── AUTH SESSIONS ─────────────────────────────────────────────────────────
+
+  /auth-session/:
+    get:
+      tags: [AuthSession]
+      summary: List device sessions
+      operationId: listSessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        '200':
+          description: Session list
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  accessToken:
-                    type: string
-                    description: JWT access token (expires in 15 minutes)
-        '401':
-          description: Invalid or expired refresh token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/logout:
-    post:
-      tags: [Auth]
-      summary: Logout and revoke refresh token
-      operationId: logoutUser
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [refreshToken]
-              properties:
-                refreshToken:
-                  type: string
-      responses:
-        '200':
-          description: Logged out successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuthSessionItem'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /auth-session/deactivate/{id}:
+    delete:
+      tags: [AuthSession]
+      summary: Deactivate a session (remote sign-out)
+      operationId: deactivateSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: deactivate success
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
 components:
+
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Access token (short-lived JWT, sub=access_token)
+    refreshTokenAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Refresh token (longer-lived JWT, sub=refresh_token)
 
   parameters:
     DeviceId:
@@ -312,68 +596,57 @@ components:
       required: true
       schema:
         type: string
-      description: Unique identifier for the client device/browser session
+      description: Client device identifier (stored in cookie)
 
   responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            message: validation error description
     Unauthorized:
-      description: Missing or invalid access token
+      description: Missing or invalid auth token
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            code: UNAUTHORIZED
-            message: Access token is missing or invalid.
-    RateLimited:
-      description: Too many requests
+            $ref: '#/components/schemas/ErrorMessage'
+    NotFound:
+      description: Resource not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            code: RATE_LIMITED
-            message: Too many requests. Please try again later.
+            $ref: '#/components/schemas/ErrorMessage'
+    Conflict:
+      description: Conflict (duplicate resource)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
 
   schemas:
-    RegisterRequest:
+    SignupRequest:
       type: object
       required: [displayName, email, password]
       properties:
         displayName:
           type: string
-          minLength: 2
+          minLength: 3
           maxLength: 50
-          pattern: '^[a-zA-Z0-9]+$'
-          description: Alphanumeric display name (2–50 chars)
           example: JohnDoe
         email:
           type: string
           format: email
-          maxLength: 255
-          description: Valid email address (must be unique)
+          maxLength: 80
           example: user@example.com
         password:
           type: string
           minLength: 8
-          maxLength: 128
-          description: |
-            Minimum 8 characters.
-            Must contain: ≥1 uppercase, ≥1 digit, ≥1 special character (!@#$%^&*()_+).
+          maxLength: 32
+          description: Must contain uppercase, lowercase, digit, special character
           example: SecurePass1!
-
-    RegisterResponse:
-      type: object
-      properties:
-        userId:
-          type: string
-          format: uuid
-        email:
-          type: string
-          format: email
-        tier:
-          type: string
-          enum: [free]
-          description: Always "free" for new registrations
 
     LoginRequest:
       type: object
@@ -385,47 +658,128 @@ components:
         password:
           type: string
 
+    OAuthRequest:
+      type: object
+      required: [provider, providerId, email, displayName]
+      properties:
+        provider:
+          type: string
+          enum: [google, github, facebook]
+        providerId:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        image:
+          type: string
+          nullable: true
+
     AuthTokenResponse:
       type: object
       properties:
-        accessToken:
-          type: string
-          description: JWT access token (expires in 15 minutes)
-        refreshToken:
-          type: string
-          description: Opaque refresh token (expires in 30 days)
-        tier:
-          type: string
-          enum: [free, personal, startup]
+        token:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+        account:
+          type: object
+          properties:
+            displayName:
+              type: string
+            email:
+              type: string
+              format: email
+            image:
+              type: string
+              nullable: true
+            isVerify:
+              type: boolean
 
-    ValidationError:
+    AccountProfile:
       type: object
       properties:
-        code:
+        id:
           type: string
-          example: VALIDATION_ERROR
-        message:
+          description: ULID
+        displayName:
           type: string
-          example: One or more fields are invalid.
-        errors:
-          type: array
-          items:
-            type: object
-            properties:
-              field:
-                type: string
-                example: email
-              code:
-                type: string
-                example: INVALID_FORMAT
-              message:
-                type: string
-                example: Email format is invalid.
+        email:
+          type: string
+          format: email
+        image:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        isVerify:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
-    Error:
+    AccountSettings:
       type: object
       properties:
-        code:
+        language:
           type: string
+          enum: [en, th]
+        theme:
+          type: string
+          enum: [light, dark, system]
+        updatedAt:
+          type: string
+          format: date-time
+
+    AuthSessionItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+        deviceId:
+          type: string
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        ipInfo:
+          type: object
+          properties:
+            country: { type: string }
+            city: { type: string }
+            region: { type: string }
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+
+    ErrorMessage:
+      type: object
+      properties:
         message:
           type: string
